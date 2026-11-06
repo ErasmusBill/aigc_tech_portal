@@ -231,9 +231,10 @@ jobs:
             # Stop any competing web servers on port 80/443 (e.g. default apache2)
             if systemctl is-active --quiet apache2 2>/dev/null; then
               echo "==> Stopping competing apache2 service on port 80..."
-              run_sudo systemctl stop apache2
-              run_sudo systemctl disable apache2
+              run_sudo systemctl stop apache2 2>/dev/null || true
+              run_sudo systemctl disable apache2 2>/dev/null || true
             fi
+            run_sudo pkill -9 -f apache2 2>/dev/null || true
 
             # Locate Nginx binary across system paths
             NGINX_BIN=""
@@ -261,6 +262,9 @@ jobs:
               # Ensure webroot and configuration directories exist
               run_sudo mkdir -p /var/www/html /etc/nginx/sites-available /etc/nginx/sites-enabled /etc/nginx/conf.d
 
+              # Remove default Nginx site that can conflict with port 80 binding
+              run_sudo rm -f /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf 2>/dev/null || true
+
               # Deploy site config with .conf extension
               if grep -q "sites-enabled" /etc/nginx/nginx.conf 2>/dev/null || [ -d "/etc/nginx/sites-available" ]; then
                 echo "==> Deploying Nginx site to /etc/nginx/sites-available/portal.t4f-global.org.conf..."
@@ -275,11 +279,19 @@ jobs:
                 run_sudo cp "$NGINX_CONF" /etc/nginx/conf.d/portal.t4f-global.org.conf
               fi
 
-              # Validate and restart Nginx
+              # Validate configuration before touching processes
               if run_sudo "$NGINX_BIN" -t; then
-                echo "==> Nginx test passed. Restarting Nginx service..."
+                echo "==> Nginx syntax test passed. Freeing port 80/443 from any hung orphan processes..."
+                run_sudo fuser -k 80/tcp 443/tcp 2>/dev/null || true
+                run_sudo pkill -9 -f nginx 2>/dev/null || true
+                sleep 1
+
+                echo "==> Starting fresh Nginx service..."
+                run_sudo systemctl reset-failed nginx 2>/dev/null || true
+                run_sudo systemctl unmask nginx 2>/dev/null || true
                 run_sudo systemctl enable nginx 2>/dev/null || true
-                run_sudo systemctl restart nginx 2>/dev/null || run_sudo service nginx restart 2>/dev/null || run_sudo "$NGINX_BIN" -s reload || true
+                run_sudo systemctl start nginx || run_sudo service nginx start || true
+                run_sudo systemctl status nginx --no-pager || true
 
                 # Automatic Let's Encrypt SSL via Certbot
                 CERTBOT_BIN=""
@@ -292,13 +304,13 @@ jobs:
 
                 if [ -n "$CERTBOT_BIN" ]; then
                   echo "==> Provisioning Let's Encrypt SSL certificate for portal.t4f-global.org..."
-                  run_sudo "$CERTBOT_BIN" --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect --keep-until-expiring || echo "::warning::Certbot encountered an error during certificate issuance"
-                  run_sudo systemctl reload nginx 2>/dev/null || run_sudo "$NGINX_BIN" -s reload || true
+                  run_sudo "$CERTBOT_BIN" --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect --keep-until-expiring
+                  run_sudo systemctl reload nginx 2>/dev/null || run_sudo systemctl restart nginx || true
                 else
                   echo "==> [Notice] Certbot binary not found in standard paths."
                 fi
               else
-                echo "::warning::Nginx configuration test failed, skipping reload to prevent downtime."
+                echo "::warning::Nginx configuration test failed, skipping restart."
               fi
             fi
 

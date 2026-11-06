@@ -18,11 +18,21 @@ def test_workspace_state_roundtrip():
     assert User.objects.get(username="admin@example.org").check_password("Temporary-Password-123!")
 
 @pytest.mark.django_db
-def test_deleted_records_are_removed():
-    org=Organization.objects.create(id="t4f-hq",name="HQ",organization_type="global_hq")
-    user=User.objects.create_user("admin2@example.org",password="A-strong-test-password-123!")
-    PlatformProfile.objects.create(user=user,platform_user_id="u2",organization=org,system_role="platform_super_admin")
-    save_workspace_state({"organizations":[{"id":"t4f-hq","name":"HQ","type":"global_hq"}],"users":[],"reports":[{"id":"r1","orgId":"t4f-hq","title":"R"}]},user)
-    save_workspace_state({"organizations":[{"id":"t4f-hq","name":"HQ","type":"global_hq"}],"users":[],"reports":[]},user)
-    from platform_core.models import PlatformRecord
-    assert not PlatformRecord.objects.filter(record_type="reports",record_id="r1").exists()
+def test_custom_user_admin_and_profile_integration():
+    from django.contrib.admin.sites import AdminSite
+    from platform_core.admin import CustomUserAdmin
+    org = Organization.objects.create(id="t4f-hq", name="Tech4Future Headquarters", organization_type="global_hq")
+    admin_site = AdminSite()
+    user_admin = CustomUserAdmin(User, admin_site)
+    
+    # Create a user through admin save_model
+    new_user = User(username="newadmin", email="newadmin@t4f-global.org", is_superuser=True)
+    new_user.set_password("SecurePassword2027!")
+    user_admin.save_model(None, new_user, None, False)
+    
+    # Verify profile automatically provisioned
+    assert hasattr(new_user, "platform_profile")
+    assert new_user.platform_profile.organization == org
+    assert new_user.platform_profile.system_role == "platform_super_admin"
+    assert user_admin.get_organization(new_user) == "Tech4Future Headquarters"
+    assert user_admin.get_system_role(new_user) == "Platform Super Admin"

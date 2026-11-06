@@ -1,3 +1,4 @@
+django-jazzmin==3.0.5
 Django==6.1.2
 fastapi==0.162.0
 uvicorn[standard]>=0.38,<1

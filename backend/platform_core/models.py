@@ -30,17 +30,40 @@ class Position(TimestampedModel):
     metadata = models.JSONField(default=dict, blank=True)
     def __str__(self): return self.title
 
+SYSTEM_ROLE_CHOICES = [
+    ("platform_super_admin", "Platform Super Administrator"),
+    ("high_super_admin", "High Super Administrator"),
+    ("country_super_admin", "Country Super Administrator"),
+    ("country_it_admin", "Country IT Account Administrator"),
+    ("standard_user", "Standard User"),
+]
+
+STATUS_CHOICES = [
+    ("Active", "Active"),
+    ("Suspended", "Suspended"),
+    ("Inactive", "Inactive"),
+]
+
 class PlatformProfile(TimestampedModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="platform_profile")
-    platform_user_id = models.CharField(max_length=160, unique=True, db_index=True)
+    platform_user_id = models.CharField(max_length=160, unique=True, db_index=True, blank=True)
     organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.SET_NULL, related_name="profiles")
     position = models.ForeignKey(Position, null=True, blank=True, on_delete=models.SET_NULL, related_name="profiles")
-    system_role = models.CharField(max_length=80, default="standard_user", db_index=True)
-    status = models.CharField(max_length=40, default="Active", db_index=True)
+    system_role = models.CharField(max_length=80, default="standard_user", choices=SYSTEM_ROLE_CHOICES, db_index=True)
+    status = models.CharField(max_length=40, default="Active", choices=STATUS_CHOICES, db_index=True)
     must_reset = models.BooleanField(default=True)
     profile_data = models.JSONField(default=dict, blank=True)
     invited_at = models.DateTimeField(null=True, blank=True)
     last_seen_at = models.DateTimeField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.platform_user_id:
+            self.platform_user_id = str(uuid.uuid4())
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        org_name = self.organization.name if self.organization else "No Org"
+        return f"{self.user.username} ({org_name})"
 
 class ApiSession(TimestampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.urls import path, re_path
+from django.views.generic import RedirectView
 from platform_core import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("django-admin/", admin.site.urls),
+    path("django-admin/", RedirectView.as_view(url="/admin/", permanent=False)),
     path("", views.frontend_index, name="frontend-index"),
     path("styles.css", views.frontend_file, {"relative_path": "styles.css"}),
     path("app.js", views.frontend_file, {"relative_path": "app.js"}),

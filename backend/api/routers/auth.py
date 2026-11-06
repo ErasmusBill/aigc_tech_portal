@@ -14,15 +14,51 @@ router=APIRouter(prefix="/auth",tags=["auth"])
 
 @router.post("/login",response_model=LoginResponse)
 async def login(body: LoginRequest, request: Request):
-    email=str(body.email).lower()
-    user=await sync_to_async(authenticate,thread_sensitive=True)(username=email,password=body.password)
+    identifier = str(body.email).strip().lower()
+
+    def find_and_auth():
+        from django.contrib.auth.models import User
+        # Try direct username authentication
+        u = authenticate(username=identifier, password=body.password)
+        if not u:
+            # Try matching by email
+            matched = User.objects.filter(email__iexact=identifier).first()
+            if matched:
+                u = authenticate(username=matched.username, password=body.password)
+        return u
+
+    user = await sync_to_async(find_and_auth, thread_sensitive=True)()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid organization, email, or password")
+
     def verify_org():
-        p=getattr(user,"platform_profile",None)
-        return p and p.organization_id==body.organization_id and p.status!="Inactive"
-    if not await sync_to_async(verify_org,thread_sensitive=True)():
+        import uuid
+        from platform_core.models import Organization, PlatformProfile
+        p = getattr(user, "platform_profile", None)
+        if not p:
+            hq = Organization.objects.filter(pk="t4f-hq").first()
+            p = PlatformProfile.objects.create(
+                user=user,
+                platform_user_id=str(uuid.uuid4()),
+                organization=hq,
+                system_role="platform_super_admin" if user.is_superuser else "standard_user",
+                status="Active",
+                must_reset=False,
+            )
+        if p.status == "Inactive":
+            return False
+        # Platform superusers can log into t4f-hq or their assigned org
+        if user.is_superuser and (not p.organization_id or body.organization_id == "t4f-hq" or p.organization_id == body.organization_id):
+            if not p.organization_id:
+                hq = Organization.objects.filter(pk="t4f-hq").first()
+                p.organization = hq
+                p.save(update_fields=["organization", "updated_at"])
+            return True
+        return p.organization_id == body.organization_id
+
+    if not await sync_to_async(verify_org, thread_sensitive=True)():
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid organization, email, or password")
+
     token=await sync_to_async(issue_api_session,thread_sensitive=True)(user,request.headers.get("user-agent",""),client_ip(request))
     def touch():
         p=user.platform_profile; p.last_seen_at=timezone.now(); p.save(update_fields=["last_seen_at","updated_at"]); return user_payload(user)

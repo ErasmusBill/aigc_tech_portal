@@ -20,13 +20,13 @@ var INITIAL_ADMIN={
  orgId:'t4f-hq',
  name:'Tech4Future-Global Super Administrator',
  email:'admin@t4f-global.org',
- password:'T4FGlobal@2026!',
+ password:'',
  systemRole:'platform_super_admin',
  positionId:'global-director-executive-leadership',
  status:'Active',
- mustReset:true,
+ mustReset:false,
  profile:{
-   photo:'',phone:'',country:'United States',city:'',bio:'Initial Platform Super Administrator account.',
+   photo:'',phone:'',country:'United States',city:'',bio:'Platform Super Administrator account.',
    education:'',qualifications:'',certifications:'',experience:'',appointmentDate:'',termStart:'',termEnd:'',
    linkedin:'',officeAddress:'',fax:''
  }
@@ -243,7 +243,7 @@ DATA.organizations.forEach(function(o){if(!db.organizations.some(function(x){ret
 
 function ensureInitialPlatformAccess(){
  db.settings=db.settings||{};
- if(Number(db.settings.initialAdminCredentialVersion||0)>=1)return;
+ if(Number(db.settings.initialAdminCredentialVersion||0)>=2)return;
  var u=db.users.find(function(x){return String(x.email||'').toLowerCase()===INITIAL_ADMIN.email;});
  if(!u){
    u=clone(INITIAL_ADMIN);
@@ -251,15 +251,13 @@ function ensureInitialPlatformAccess(){
  }else{
    u.orgId=INITIAL_ADMIN.orgId;
    u.email=INITIAL_ADMIN.email;
-   u.password=INITIAL_ADMIN.password;
    u.systemRole='platform_super_admin';
    u.positionId=u.positionId||INITIAL_ADMIN.positionId;
    u.status='Active';
-   u.mustReset=true;
    u.profile=u.profile||clone(INITIAL_ADMIN.profile);
  }
- db.settings.initialAdminCredentialVersion=1;
- db.settings.initialAdminCredentialConsumed=false;
+ db.settings.initialAdminCredentialVersion=2;
+ db.settings.initialAdminCredentialConsumed=true;
  db.settings.initialAdminCredentialIssuedAt=new Date().toISOString();
 }
 ensureInitialPlatformAccess();
@@ -429,11 +427,7 @@ fillSetupPositions();
 $('#setupForm').addEventListener('submit',function(e){e.preventDefault();var n=$('#setupName').value.trim(),email=$('#setupEmail').value.trim().toLowerCase(),p=$('#setupPassword').value,c=$('#setupConfirm').value;if(p!==c){$('#setupError').textContent='Passwords do not match.';return;}if(p.length!==8){$('#setupError').textContent='Password must be only 8 characters long.';return;}var u={id:uuid(),orgId:'t4f-hq',name:n,email:email,password:p,systemRole:'platform_super_admin',positionId:$('#setupPosition').value,status:'Active',mustReset:false,profile:emptyProfile('United States')};db.users.push(u);save();session=clone(u);sessionStorage.setItem(SESSION_KEY,JSON.stringify({id:u.id}));logAction('Platform initialized','Platform Super Administrator created','t4f-hq');openPortal();});
 
 function fillInitialAdminLogin(){
- var org=$('#loginOrg'),email=$('#loginEmail'),pw=$('#loginPassword');
- if(org)org.value='t4f-hq';
- if(email)email.value=INITIAL_ADMIN.email;
- if(pw)pw.value=INITIAL_ADMIN.password;
- var e=$('#loginError');if(e)e.textContent='';
+ // Initial admin shortcut removed for production security
 }
 function fillLoginOrganizations(){var ids={};db.users.filter(function(u){return u.status!=='Inactive';}).forEach(function(u){ids[u.orgId]=true;});$('#loginOrg').innerHTML=db.organizations.filter(function(o){return ids[o.id];}).map(function(o){return '<option value="'+o.id+'">'+esc(o.name)+'</option>';}).join('');}
 $('#loginForm').addEventListener('submit',async function(e){e.preventDefault();var org=$('#loginOrg').value,email=$('#loginEmail').value.trim().toLowerCase(),pw=$('#loginPassword').value,u=null;try{u=await backendLogin(org,email,pw);}catch(authErr){$('#loginError').textContent='Invalid organization, email, or password.';return;}if(!u){u=db.users.find(function(x){return x.orgId===org&&x.email.toLowerCase()===email&&x.password===pw&&x.status!=='Inactive';});}if(!u){$('#loginError').textContent='Invalid organization, email, or password. If the server is online, verify the Django account credentials and organization.';return;}session=clone(u);viewedOrgId=u.orgId;sessionStorage.setItem(SESSION_KEY,JSON.stringify({id:u.id}));logAction('Signed in','Portal access',u.orgId);openPortal();if(u.mustReset)forcePasswordChange();});

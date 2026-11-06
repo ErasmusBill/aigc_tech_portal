@@ -228,6 +228,16 @@ jobs:
             echo "==> Setting up Host Nginx configuration..."
             NGINX_CONF="$TARGET_DIR/docker/nginx/host-nginx-portal.t4f-global.org.conf"
 
+            # Inspect listeners on port 80 and 443
+            echo "================================================================"
+            echo "==> DIAGNOSTICS: Inspecting listeners on port 80 and 443..."
+            run_sudo ss -tulpn | grep -E ':80\b|:443\b' || true
+            echo "==> DIAGNOSTICS: Inspecting all running Docker containers..."
+            run_docker ps -a || true
+            echo "==> DIAGNOSTICS: Checking systemd Nginx status..."
+            run_sudo systemctl status nginx --no-pager || true
+            echo "================================================================"
+
             # Stop competing apache2 service if active
             if systemctl is-active --quiet apache2 2>/dev/null; then
               echo "==> Stopping competing apache2 service on port 80..."
@@ -281,7 +291,8 @@ jobs:
               # Validate configuration before reloading
               if run_sudo "$NGINX_BIN" -t; then
                 echo "==> Nginx syntax test passed. Reloading Nginx service gracefully..."
-                run_sudo systemctl reload nginx 2>/dev/null || run_sudo service nginx reload 2>/dev/null || run_sudo systemctl start nginx 2>/dev/null || true
+                run_sudo systemctl reload nginx || run_sudo systemctl start nginx || true
+                echo "==> Active Nginx state: $(run_sudo systemctl is-active nginx 2>/dev/null || echo 'unknown')"
 
                 # Automatic Let's Encrypt SSL via Certbot
                 CERTBOT_BIN=""

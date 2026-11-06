@@ -41,12 +41,13 @@ ROOT_URLCONF = "t4f_backend.urls"
 
 TEMPLATES = [{
     "BACKEND": "django.template.backends.django.DjangoTemplates",
-    "DIRS": [PROJECT_ROOT],
+    "DIRS": [BASE_DIR / "templates", PROJECT_ROOT],
     "APP_DIRS": True,
     "OPTIONS": {"context_processors": [
         "django.template.context_processors.request",
         "django.contrib.auth.context_processors.auth",
         "django.contrib.messages.context_processors.messages",
+        "platform_core.context_processors.admin_dashboard_stats",
     ]},
 }]
 
@@ -108,6 +109,9 @@ USE_TZ = True
 # Static & Media Assets
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", BASE_DIR / "media"))
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -196,6 +200,10 @@ JAZZMIN_SETTINGS = {
     "site_title": "T4F-Global Management",
     "site_header": "Tech4Future-Global",
     "site_brand": "T4F Management",
+    "site_logo": "img/t4f-global-logo.jpg",
+    "login_logo": "img/t4f-global-logo.jpg",
+    "site_logo_classes": "img-circle elevation-3",
+    "site_icon": "img/t4f-global-logo.jpg",
     "welcome_sign": "Welcome to Tech4Future-Global Administration Console",
     "copyright": "Tech4Future-Global",
     "search_model": ["auth.User", "platform_core.Organization", "platform_core.PlatformRecord"],

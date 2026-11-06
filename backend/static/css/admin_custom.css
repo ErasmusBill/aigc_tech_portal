@@ -333,3 +333,36 @@ a.model-title-link:hover {
   color: #2563eb;
   text-decoration: underline;
 }
+
+/* ==============================================================================
+   Login Logo Constraints & Visibility Protection
+   ============================================================================== */
+.login-logo img,
+.login-box .login-logo img,
+img.login-logo {
+  max-width: 88px !important;
+  max-height: 88px !important;
+  width: 88px !important;
+  height: 88px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  margin: 0 auto 0.75rem auto !important;
+  display: block !important;
+  border: 3px solid rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Navbar Top Logout Button */
+.navbar-nav .btn-danger {
+  background-color: #dc2626 !important;
+  border-color: #b91c1c !important;
+  color: #ffffff !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.navbar-nav .btn-danger:hover {
+  background-color: #b91c1c !important;
+  border-color: #991b1b !important;
+  transform: translateY(-1px);
+}
+

@@ -1,0 +1,455 @@
+{% load i18n static admin_urls %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% trans 'Log in' %} | Tech4Future-Global Administration</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'img/t4f-global-logo.jpg' %}" type="image/jpeg">
+    <link rel="icon" href="{% static 'img/t4f-global-logo.jpg' %}" type="image/jpeg">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome-free/css/all.min.css' %}">
+
+    <style>
+        :root {
+            --brand-navy-950: #05101e;
+            --brand-navy-900: #0a1b33;
+            --brand-navy-800: #102a4e;
+            --brand-navy-700: #193f73;
+            --brand-blue-500: #1877f2;
+            --brand-blue-600: #0d6efd;
+            --brand-cyan-400: #38bdf8;
+            --brand-emerald: #059669;
+            --brand-rose: #dc2626;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: radial-gradient(circle at 10% 15%, #183b6b 0%, #0c1f3a 50%, #061120 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            color: #ffffff;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient background glow accents */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            left: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(24, 119, 242, 0.18) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 460px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 1.75rem;
+        }
+
+        .logo-wrapper {
+            width: 88px;
+            height: 88px;
+            margin: 0 auto 1.15rem auto;
+            position: relative;
+        }
+
+        .logo-wrapper img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 30px rgba(56, 189, 248, 0.25);
+            background: #ffffff;
+            display: block;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--brand-cyan-400);
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            margin-bottom: 0.65rem;
+        }
+
+        .brand-header h1 {
+            font-size: 1.55rem;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            color: #ffffff;
+            margin-bottom: 0.35rem;
+        }
+
+        .brand-header p {
+            font-size: 0.88rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        /* Authentication Card */
+        .auth-card {
+            background: #ffffff;
+            color: var(--text-primary);
+            border-radius: 18px;
+            padding: 2.25rem 2rem;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .card-header-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1.35rem;
+        }
+
+        /* Alerts & Error messages */
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            font-size: 0.85rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            line-height: 1.4;
+        }
+
+        .alert-error i {
+            color: #dc2626;
+            margin-top: 0.15rem;
+            flex-shrink: 0;
+        }
+
+        .alert-info {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            color: #0369a1;
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            font-size: 0.85rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            line-height: 1.4;
+        }
+
+        /* Form Fields */
+        .form-group {
+            margin-bottom: 1.15rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 0.45rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            color: #94a3b8;
+            font-size: 0.95rem;
+            pointer-events: none;
+            transition: color 0.15s ease;
+        }
+
+        .input-control {
+            width: 100%;
+            height: 46px;
+            padding: 0.5rem 1rem 0.5rem 2.65rem;
+            font-size: 0.92rem;
+            font-family: inherit;
+            color: #0f172a;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .input-control:focus {
+            background: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .input-control:focus + .input-icon,
+        .input-wrapper:focus-within .input-icon {
+            color: #2563eb;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 0.85rem;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 0.4rem;
+            font-size: 0.95rem;
+            border-radius: 6px;
+            transition: color 0.15s ease;
+        }
+
+        .toggle-password:hover {
+            color: #334155;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            height: 48px;
+            margin-top: 0.5rem;
+            background: linear-gradient(135deg, #1877f2 0%, #0284c7 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 14px rgba(24, 119, 242, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(24, 119, 242, 0.45);
+            filter: brightness(1.05);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Card footer links */
+        .card-footer-links {
+            margin-top: 1.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.82rem;
+        }
+
+        .card-footer-links a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .card-footer-links a:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
+        /* Bottom Security info */
+        .auth-footer {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .auth-footer .security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: #38bdf8;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <div class="brand-header">
+        <div class="logo-wrapper">
+            <img src="{% static 'img/t4f-global-logo.jpg' %}" alt="Tech4Future-Global Crest">
+        </div>
+        <div class="brand-badge">
+            <i class="fas fa-shield-alt"></i> Executive Administration
+        </div>
+        <h1>Tech4Future-Global</h1>
+        <p>Master Governance & Platform Management Console</p>
+    </div>
+
+    <div class="auth-card">
+        <div class="card-header-label">Authorized Access</div>
+        <h2 class="card-title">Sign in to Admin Console</h2>
+
+        {% if user.is_authenticated %}
+            <div class="alert-info">
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    You are already authenticated as <strong>{{ user.get_username }}</strong>, but require elevated administrative permissions.
+                </div>
+            </div>
+        {% endif %}
+
+        {% if form.errors %}
+            <div class="alert-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    {% if form.non_field_errors %}
+                        {{ form.non_field_errors|join:", " }}
+                    {% else %}
+                        Please enter a correct username and password. Note that both fields are case-sensitive.
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        <form action="{{ app_path }}" method="post" id="login-form">
+            {% csrf_token %}
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+
+            <div class="form-group">
+                <label for="id_username">Username or Email</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" name="username" id="id_username" class="input-control" placeholder="Enter administrative username" required autofocus autocomplete="username">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="id_password">Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" name="password" id="id_password" class="input-control" placeholder="Enter password" required autocomplete="current-password">
+                    <button type="button" class="toggle-password" id="togglePassword" title="Show or hide password" aria-label="Toggle password visibility">
+                        <i class="fas fa-eye" id="togglePasswordIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">
+                <i class="fas fa-sign-in-alt"></i> Sign in securely
+            </button>
+        </form>
+
+        <div class="card-footer-links">
+            <a href="/">
+                <i class="fas fa-arrow-left"></i> Return to Main Portal
+            </a>
+            <span style="color: #94a3b8;">•</span>
+            <a href="/api/v1/docs" target="_blank">
+                <i class="fas fa-book-open"></i> API Docs
+            </a>
+        </div>
+    </div>
+
+    <div class="auth-footer">
+        <div class="security-badge">
+            <i class="fas fa-lock text-success"></i> 256-Bit SSL Encrypted Session
+        </div>
+        <div>Tech4Future-Global • Master Official Platform • All rights reserved</div>
+    </div>
+</div>
+
+<script>
+    // Password toggle
+    const toggleBtn = document.getElementById('togglePassword');
+    const pwdInput = document.getElementById('id_password');
+    const pwdIcon = document.getElementById('togglePasswordIcon');
+    if (toggleBtn && pwdInput) {
+        toggleBtn.addEventListener('click', function() {
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                pwdIcon.classList.remove('fa-eye');
+                pwdIcon.classList.add('fa-eye-slash');
+            } else {
+                pwdInput.type = 'password';
+                pwdIcon.classList.remove('fa-eye-slash');
+                pwdIcon.classList.add('fa-eye');
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

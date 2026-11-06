@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+.env.production
+!.env.example
+!.env.production.example
+
+# IDE & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.coverage.*
+
+# Database & SQLite
+*.sqlite3
+*.db
+backend/db.sqlite3-shm
+backend/db.sqlite3-wal
+
+# Django & Media
+backend/staticfiles/
+backend/media/*
+!backend/media/.gitkeep
+backups/*.sql
+backups/*.gz
+
+# SSL & Certbot
+docker/nginx/ssl/*
+!docker/nginx/ssl/.gitkeep
+docker/nginx/certbot/

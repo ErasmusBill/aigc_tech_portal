@@ -1,15 +1,16 @@
 # Makefile for Tech4Future-Global Management System V13
-.PHONY: help install migrate bootstrap dev test check db-build db-up db-down db-logs docker-build docker-up docker-down docker-logs docker-test prod-build prod-up prod-down prod-logs prod-backup prod-check clean
+.PHONY: help install migrate bootstrap seed-users dev test check db-build db-up db-down db-logs docker-build docker-up docker-down docker-logs docker-test prod-build prod-up prod-down prod-logs prod-migrate prod-seed prod-collectstatic prod-restart prod-backup prod-check clean
 
 PYTHON ?= .venv/bin/python
 UVICORN ?= .venv/bin/uvicorn
 PYTEST ?= .venv/bin/pytest
+PORT ?= 8080
 
 help: ## Show this help message
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 install: ## Set up Python 3.13 venv and install dependencies using uv
 	uv venv --python 3.13
@@ -24,8 +25,8 @@ bootstrap: ## Seed organizations, positions, and initial admin (SQLite mode)
 seed-users: ## Seed full suite of user roles and credentials (SQLite mode)
 	DB_ENGINE=sqlite $(PYTHON) backend/manage.py seed_all_users
 
-dev: ## Run local development server on http://localhost:8000
-	DB_ENGINE=sqlite PYTHONPATH=backend $(UVICORN) t4f_backend.asgi:application --host 0.0.0.0 --port 8000 --reload
+dev: ## Run local development server on http://localhost:$(PORT)
+	DB_ENGINE=sqlite PYTHONPATH=backend $(UVICORN) t4f_backend.asgi:application --host 0.0.0.0 --port $(PORT) --reload
 
 test: ## Run unit and integration tests with pytest
 	$(PYTEST) backend/tests
@@ -62,11 +63,11 @@ docker-logs: ## Follow Docker Compose logs
 docker-test: ## Run test suite inside Docker web container
 	docker compose exec web pytest tests
 
-# --- Production Deployment Targets ---
+# --- Production Deployment Targets (portal.t4f-global.org) ---
 prod-build: ## Build production stack with Nginx and production settings
 	docker compose -f docker-compose.prod.yml build
 
-prod-up: ## Start production stack in background
+prod-up: ## Start production stack in background (Port 8080)
 	docker compose -f docker-compose.prod.yml up -d
 
 prod-down: ## Stop production stack
@@ -74,6 +75,18 @@ prod-down: ## Stop production stack
 
 prod-logs: ## View production stack logs
 	docker compose -f docker-compose.prod.yml logs -f
+
+prod-migrate: ## Run database migrations in production container
+	docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
+
+prod-seed: ## Seed all user roles in production container
+	docker compose -f docker-compose.prod.yml exec -T web python manage.py seed_all_users
+
+prod-collectstatic: ## Collect static files in production container
+	docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
+
+prod-restart: ## Restart production web and nginx services
+	docker compose -f docker-compose.prod.yml restart web nginx
 
 prod-backup: ## Trigger production database backup
 	./scripts/backup_db.sh

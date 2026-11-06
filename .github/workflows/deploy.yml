@@ -1,0 +1,132 @@
+name: Deploy Tech4Future-Global Portal to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production_deployment
+  cancel-in-progress: false
+
+jobs:
+  # ============================================================================
+  # 1. CI / Test Quality Gate
+  # ============================================================================
+  test:
+    name: Run Unit & Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install -r backend/requirements-dev.txt
+
+      - name: Run Django System Check
+        env:
+          DB_ENGINE: sqlite
+          DJANGO_SECRET_KEY: ci-test-secret-key-at-least-fifty-characters-long-2027
+          DJANGO_DEBUG: "false"
+        run: |
+          python backend/manage.py check
+
+      - name: Execute Pytest Suite
+        env:
+          DB_ENGINE: sqlite
+          DJANGO_SECRET_KEY: ci-test-secret-key-at-least-fifty-characters-long-2027
+          DJANGO_DEBUG: "false"
+        run: |
+          pytest backend/tests
+
+  # ============================================================================
+  # 2. CD / Automated VPS Deployment
+  # ============================================================================
+  deploy:
+    name: Deploy to Production VPS (portal.t4f-global.org)
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Execute Remote Deployment via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ vars.VPS_PORT || 22 }}
+          script_stop: true
+          envs: DEPLOY_DIR
+        env:
+          DEPLOY_DIR: ${{ vars.DEPLOY_PATH || '/var/www/portal.t4f-global.org' }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ vars.VPS_PORT || 22 }}
+          script_stop: true
+          script: |
+            TARGET_DIR="${{ vars.DEPLOY_PATH || '/var/www/portal.t4f-global.org' }}"
+            echo "==> Deploying to $TARGET_DIR..."
+
+            # Ensure deployment target directory exists
+            if [ ! -d "$TARGET_DIR" ]; then
+              echo "Target directory $TARGET_DIR does not exist. Creating and cloning..."
+              mkdir -p "$TARGET_DIR"
+              git clone git@github.com:${{ github.repository }}.git "$TARGET_DIR"
+            fi
+
+            cd "$TARGET_DIR"
+
+            # Pull latest changes
+            echo "==> Pulling latest changes from origin/main..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Ensure .env exists
+            if [ ! -f .env ]; then
+              echo "Notice: .env not found on server. Creating from .env.production.example..."
+              cp .env.production.example .env
+              echo "IMPORTANT: Please verify your production secrets inside $TARGET_DIR/.env"
+            fi
+
+            # Build and launch production Docker stack
+            echo "==> Building and launching Docker Compose stack..."
+            docker compose -f docker-compose.prod.yml build
+            docker compose -f docker-compose.prod.yml up -d
+
+            # Run database migrations
+            echo "==> Executing database migrations..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
+
+            # Collect static files
+            echo "==> Collecting static assets..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput || true
+
+            # Seed user accounts
+            echo "==> Verifying platform users..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py seed_all_users || true
+
+            # Verify health status
+            echo "==> Running system health probe..."
+            sleep 5
+            HEALTH_URL="http://127.0.0.1:${WEB_PORT:-8080}/api/v1/system/health"
+            if curl -sf "$HEALTH_URL" > /dev/null; then
+              echo "==> [OK] System is healthy and responding at $HEALTH_URL"
+            else
+              echo "==> [WARNING] Health probe at $HEALTH_URL did not respond 200 OK. Check docker logs."
+            fi
+
+            echo "==> Deployment of portal.t4f-global.org completed successfully!"

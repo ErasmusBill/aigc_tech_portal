@@ -1,0 +1,191 @@
+/* ==============================================================================
+   Tech4Future-Global Administration Console Custom Styling
+   ============================================================================== */
+
+:root {
+  --t4f-navy-900: #0b1f3a;
+  --t4f-navy-800: #122b4d;
+  --t4f-navy-700: #1a3c68;
+  --t4f-navy-600: #25528c;
+  --t4f-blue-500: #1877f2;
+  --t4f-teal-500: #0ea5e9;
+  --t4f-emerald-500: #10b981;
+  --t4f-amber-500: #f59e0b;
+  --t4f-rose-500: #ef4444;
+}
+
+/* Brand logo & Header */
+.brand-link {
+  display: flex !important;
+  align-items: center !important;
+  padding: 0.85rem 1rem !important;
+}
+
+.brand-link .brand-image {
+  max-height: 38px !important;
+  width: 38px !important;
+  height: 38px !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  margin-right: 0.75rem !important;
+  object-fit: cover !important;
+}
+
+.brand-text {
+  font-weight: 700 !important;
+  font-size: 1.05rem !important;
+  letter-spacing: -0.2px !important;
+}
+
+/* Badges across all list views */
+.badge {
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  padding: 0.35em 0.75em !important;
+  border-radius: 6px !important;
+  letter-spacing: 0.2px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1.2 !important;
+}
+
+.badge i {
+  font-size: 0.82em;
+}
+
+.badge-purple {
+  background-color: #7c3aed !important;
+  color: #ffffff !important;
+}
+
+.badge-indigo {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+.badge-teal {
+  background-color: #0d9488 !important;
+  color: #ffffff !important;
+}
+
+/* Tables & Lists */
+.table thead th {
+  border-top: none !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.6px !important;
+  padding: 0.75rem 1rem !important;
+}
+
+.table tbody td {
+  padding: 0.85rem 1rem !important;
+  vertical-align: middle !important;
+  border-top: 1px solid #f1f5f9 !important;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(30, 58, 138, 0.03) !important;
+}
+
+/* Card styling */
+.card {
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
+  overflow: hidden;
+}
+
+.card-header {
+  border-bottom: 1px solid #edf2f7 !important;
+  padding: 0.9rem 1.25rem !important;
+}
+
+/* Form controls & inputs */
+.form-control, select.form-control {
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+  font-size: 0.92rem !important;
+  padding: 0.45rem 0.75rem !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.form-control:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Fieldset styling */
+fieldset {
+  margin-bottom: 1.5rem !important;
+}
+
+fieldset.module h2 {
+  background: #f8fafc !important;
+  color: #1e293b !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  padding: 0.75rem 1.25rem !important;
+  border-radius: 8px 8px 0 0 !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.help, p.help {
+  color: #64748b !important;
+  font-size: 0.8rem !important;
+  margin-top: 0.35rem !important;
+  font-style: normal !important;
+}
+
+/* Action buttons */
+.btn {
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  padding: 0.4rem 0.9rem !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.btn-sm, .btn-xs {
+  font-size: 0.78rem !important;
+  padding: 0.25rem 0.6rem !important;
+}
+
+/* Breadcrumbs */
+.breadcrumb {
+  background: transparent !important;
+  padding: 0.5rem 0 !important;
+  font-size: 0.85rem !important;
+}
+
+/* Sidebar nav */
+.nav-sidebar .nav-item > .nav-link {
+  border-radius: 6px !important;
+  margin-bottom: 2px !important;
+  font-weight: 500 !important;
+  font-size: 0.88rem !important;
+}
+
+.nav-sidebar .nav-header {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.8px !important;
+  color: #94a3b8 !important;
+  padding: 0.75rem 1rem 0.25rem !important;
+  text-transform: uppercase !important;
+}
+
+/* Clickable admin model titles */
+a.model-title-link {
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+a.model-title-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}

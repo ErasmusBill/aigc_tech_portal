@@ -4,6 +4,9 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.html import format_html
 from .models import (
     Organization,
     Position,
@@ -19,6 +22,23 @@ from .models import (
 )
 
 # ==============================================================================
+# Helper Formatting Utilities
+# ==============================================================================
+def format_file_size(size_bytes):
+    try:
+        b = float(size_bytes or 0)
+        if b < 1024:
+            return f"{int(b)} B"
+        elif b < 1024 * 1024:
+            return f"{b / 1024:.1f} KB"
+        elif b < 1024 * 1024 * 1024:
+            return f"{b / (1024 * 1024):.1f} MB"
+        return f"{b / (1024 * 1024 * 1024):.2f} GB"
+    except (ValueError, TypeError):
+        return "—"
+
+
+# ==============================================================================
 # Platform Profile Inline for User Admin (Change View)
 # ==============================================================================
 class PlatformProfileInline(admin.StackedInline):
@@ -27,15 +47,13 @@ class PlatformProfileInline(admin.StackedInline):
     verbose_name = "Platform Hierarchy & Organization Profile"
     verbose_name_plural = "Platform Hierarchy & Organization Profile"
     fields = (
-        "organization",
-        "position",
-        "system_role",
-        "status",
-        "must_reset",
+        ("organization", "position"),
+        ("system_role", "status", "must_reset"),
         "platform_user_id",
     )
     readonly_fields = ("platform_user_id",)
     extra = 0
+
 
 # ==============================================================================
 # Custom User Creation Form (Add View with Organization & Position)
@@ -46,13 +64,13 @@ class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(
         required=True,
         label="Email Address",
-        help_text="Required for portal login and communications.",
+        help_text="Required for portal login and system notifications.",
     )
     organization = forms.ModelChoiceField(
         queryset=Organization.objects.all(),
         required=False,
-        label="Organization",
-        help_text="Assign user to Headquarters or one of the 16 West Africa Country Portals.",
+        label="Assigned Organization",
+        help_text="Select Headquarters or one of the 16 West Africa Country Portals.",
     )
     position = forms.ModelChoiceField(
         queryset=Position.objects.all(),
@@ -101,6 +119,7 @@ class CustomUserCreationForm(UserCreationForm):
             user.save()
         return user
 
+
 # ==============================================================================
 # Custom User Admin with Profile Integration
 # ==============================================================================
@@ -113,13 +132,12 @@ class CustomUserAdmin(BaseUserAdmin):
     list_display = (
         "username",
         "email",
-        "first_name",
-        "last_name",
-        "get_organization",
-        "get_system_role",
-        "get_profile_status",
-        "is_staff",
-        "is_active",
+        "get_full_name_display",
+        "get_organization_badge",
+        "get_system_role_badge",
+        "get_profile_status_badge",
+        "get_staff_badge",
+        "date_joined",
     )
     list_filter = (
         "is_staff",
@@ -128,15 +146,18 @@ class CustomUserAdmin(BaseUserAdmin):
         "platform_profile__organization",
         "platform_profile__system_role",
         "platform_profile__status",
+        "date_joined",
     )
     search_fields = (
         "username",
         "email",
         "first_name",
         "last_name",
+        "platform_profile__organization__name",
         "platform_profile__platform_user_id",
     )
     ordering = ("username",)
+    actions = ["activate_users", "deactivate_users", "require_password_reset"]
 
     add_fieldsets = (
         (
@@ -146,8 +167,7 @@ class CustomUserAdmin(BaseUserAdmin):
                 "fields": (
                     "username",
                     "email",
-                    "first_name",
-                    "last_name",
+                    ("first_name", "last_name"),
                     "password1",
                     "password2",
                 ),
@@ -157,14 +177,53 @@ class CustomUserAdmin(BaseUserAdmin):
             "Platform Hierarchy & Organization Assignment",
             {
                 "classes": ("wide",),
-                "description": "Assign this user to an Organization and operational Position immediately upon creation.",
+                "description": "Select the organization, position, and role for this user account.",
                 "fields": (
-                    "organization",
-                    "position",
-                    "system_role",
-                    "status",
+                    ("organization", "position"),
+                    ("system_role", "status"),
                     "must_reset",
                 ),
+            },
+        ),
+    )
+
+    fieldsets = (
+        (
+            "Account Credentials",
+            {
+                "fields": ("username", "password"),
+                "description": "Primary login identifier and password authentication.",
+            },
+        ),
+        (
+            "Personal Information",
+            {
+                "fields": (("first_name", "last_name"), "email"),
+            },
+        ),
+        (
+            "Portal Permissions & Status",
+            {
+                "fields": (
+                    ("is_active", "is_staff"),
+                    "is_superuser",
+                ),
+                "description": "Active users can log into the portal. Staff users have access to this administration console.",
+            },
+        ),
+        (
+            "Advanced Django ORM Permissions",
+            {
+                "classes": ("collapse",),
+                "fields": ("groups", "user_permissions"),
+                "description": "Granular database permissions (portal roles are managed under Platform Profile below).",
+            },
+        ),
+        (
+            "Important Audit Dates",
+            {
+                "classes": ("collapse",),
+                "fields": ("last_login", "date_joined"),
             },
         ),
     )
@@ -174,20 +233,71 @@ class CustomUserAdmin(BaseUserAdmin):
             return []
         return self.inlines
 
+    @admin.display(description="Full Name")
+    def get_full_name_display(self, obj):
+        name = f"{obj.first_name} {obj.last_name}".strip()
+        return name if name else "—"
+
     @admin.display(description="Organization", ordering="platform_profile__organization")
-    def get_organization(self, obj):
+    def get_organization_badge(self, obj):
         profile = getattr(obj, "platform_profile", None)
-        return profile.organization.name if profile and profile.organization else "—"
+        if profile and profile.organization:
+            url = reverse("admin:platform_core_organization_change", args=[profile.organization.id])
+            return format_html(
+                '<a href="{}" class="font-weight-bold text-dark"><i class="fas fa-building text-primary mr-1"></i>{}</a>',
+                url,
+                profile.organization.name,
+            )
+        return format_html('<span class="text-muted font-italic">Unassigned</span>')
 
     @admin.display(description="System Role", ordering="platform_profile__system_role")
-    def get_system_role(self, obj):
+    def get_system_role_badge(self, obj):
         profile = getattr(obj, "platform_profile", None)
-        return profile.system_role.replace("_", " ").title() if profile else "—"
+        role = profile.system_role if profile else ("platform_super_admin" if obj.is_superuser else "standard_user")
+        role_map = {
+            "platform_super_admin": ("badge-primary", "fas fa-shield-alt", "Platform Super Admin"),
+            "high_super_admin": ("badge-purple", "fas fa-crown", "High Super Admin"),
+            "country_super_admin": ("badge-info", "fas fa-globe-africa", "Country Super Admin"),
+            "country_it_admin": ("badge-teal", "fas fa-user-cog", "Country IT Admin"),
+            "standard_user": ("badge-secondary", "fas fa-user", "Standard User"),
+        }
+        badge_class, icon, label = role_map.get(role, ("badge-secondary", "fas fa-user", role.replace("_", " ").title()))
+        return format_html('<span class="badge {}"><i class="{} mr-1"></i>{}</span>', badge_class, icon, label)
 
-    @admin.display(description="Portal Status", ordering="platform_profile__status")
-    def get_profile_status(self, obj):
+    @admin.display(description="Status", ordering="platform_profile__status")
+    def get_profile_status_badge(self, obj):
         profile = getattr(obj, "platform_profile", None)
-        return profile.status if profile else "Active"
+        status = profile.status if profile else ("Active" if obj.is_active else "Inactive")
+        if status == "Active":
+            return format_html('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Active</span>')
+        elif status == "Suspended":
+            return format_html('<span class="badge badge-warning text-dark"><i class="fas fa-pause-circle mr-1"></i>Suspended</span>')
+        return format_html('<span class="badge badge-danger"><i class="fas fa-times-circle mr-1"></i>Inactive</span>')
+
+    @admin.display(description="Access Tier")
+    def get_staff_badge(self, obj):
+        if obj.is_superuser:
+            return format_html('<span class="badge badge-danger"><i class="fas fa-user-shield mr-1"></i>Superuser</span>')
+        elif obj.is_staff:
+            return format_html('<span class="badge badge-primary"><i class="fas fa-user-tie mr-1"></i>Staff Admin</span>')
+        return format_html('<span class="badge badge-light border text-muted">Portal User</span>')
+
+    @admin.action(description="Activate selected users")
+    def activate_users(self, request, queryset):
+        count = queryset.update(is_active=True)
+        PlatformProfile.objects.filter(user__in=queryset).update(status="Active")
+        self.message_user(request, f"Successfully activated {count} user(s).")
+
+    @admin.action(description="Deactivate / Suspend selected users")
+    def deactivate_users(self, request, queryset):
+        count = queryset.update(is_active=False)
+        PlatformProfile.objects.filter(user__in=queryset).update(status="Inactive")
+        self.message_user(request, f"Successfully deactivated {count} user(s).")
+
+    @admin.action(description="Require password reset on next login")
+    def require_password_reset(self, request, queryset):
+        count = PlatformProfile.objects.filter(user__in=queryset).update(must_reset=True)
+        self.message_user(request, f"Set password reset requirement on {count} user(s).")
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
@@ -220,68 +330,250 @@ class CustomUserAdmin(BaseUserAdmin):
                 must_reset=False,
             )
 
+
 # ==============================================================================
 # Model Admins for Platform Core
 # ==============================================================================
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "organization_type", "country", "status", "updated_at")
+    list_display = ("name", "id", "get_type_badge", "country", "get_status_badge", "get_user_count", "updated_at")
     list_filter = ("organization_type", "status", "country")
-    search_fields = ("id", "name", "country")
+    search_fields = ("id", "name", "country", "parent_id")
     ordering = ("name",)
+    fieldsets = (
+        (
+            "Organization Profile",
+            {
+                "fields": (("name", "id"), ("organization_type", "country"), ("status", "parent_id")),
+            },
+        ),
+        (
+            "Contact & Operational Metadata",
+            {
+                "classes": ("collapse",),
+                "fields": ("contact", "metadata"),
+            },
+        ),
+    )
+
+    @admin.display(description="Type", ordering="organization_type")
+    def get_type_badge(self, obj):
+        t = obj.organization_type or "general"
+        if t == "global_hq":
+            return format_html('<span class="badge badge-primary"><i class="fas fa-landmark mr-1"></i>Global HQ</span>')
+        elif t == "country_office":
+            return format_html('<span class="badge badge-success"><i class="fas fa-globe-africa mr-1"></i>Country Office</span>')
+        elif t == "external_partner":
+            return format_html('<span class="badge badge-info"><i class="fas fa-handshake mr-1"></i>Partner</span>')
+        elif t == "fiscal_sponsor":
+            return format_html('<span class="badge badge-warning text-dark"><i class="fas fa-donate mr-1"></i>Fiscal Sponsor</span>')
+        return format_html('<span class="badge badge-secondary">{}</span>', t.replace("_", " ").title())
+
+    @admin.display(description="Status", ordering="status")
+    def get_status_badge(self, obj):
+        if obj.status == "Active":
+            return format_html('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Active</span>')
+        return format_html('<span class="badge badge-danger"><i class="fas fa-times-circle mr-1"></i>Inactive</span>')
+
+    @admin.display(description="Assigned Staff")
+    def get_user_count(self, obj):
+        count = obj.profiles.count()
+        return format_html('<span class="badge badge-light border font-weight-bold"><i class="fas fa-users mr-1"></i>{} staff</span>', count)
+
 
 @admin.register(Position)
 class PositionAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "family", "group", "reports_to")
+    list_display = ("title", "id", "get_family_badge", "group", "reports_to", "get_holders_count")
     list_filter = ("family", "group")
-    search_fields = ("id", "title", "role_purpose")
+    search_fields = ("id", "title", "family", "group", "role_purpose")
     ordering = ("title",)
+    fieldsets = (
+        (
+            "Position Hierarchy",
+            {
+                "fields": (("title", "id"), ("family", "group"), "reports_to"),
+            },
+        ),
+        (
+            "Terms of Reference (TOR)",
+            {
+                "fields": ("role_purpose", "metadata"),
+            },
+        ),
+    )
+
+    @admin.display(description="Family", ordering="family")
+    def get_family_badge(self, obj):
+        fam = obj.family or "general"
+        fam_colors = {
+            "global_management": "badge-primary",
+            "country_leadership": "badge-success",
+            "global_employee": "badge-info",
+            "volunteer": "badge-warning",
+        }
+        color = fam_colors.get(fam, "badge-secondary")
+        return format_html('<span class="badge {}">{}</span>', color, fam.replace("_", " ").title())
+
+    @admin.display(description="Holders")
+    def get_holders_count(self, obj):
+        count = obj.profiles.count()
+        return format_html('<span class="badge badge-light border">{}</span>', count)
+
 
 @admin.register(PlatformProfile)
 class PlatformProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "organization", "position", "system_role", "status", "must_reset", "last_seen_at")
+    list_display = ("get_user_link", "get_org_link", "position", "get_role_badge", "get_status_badge", "must_reset", "last_seen_at")
     list_filter = ("organization", "system_role", "status", "must_reset")
-    search_fields = ("user__username", "user__email", "platform_user_id")
+    search_fields = ("user__username", "user__email", "user__first_name", "user__last_name", "platform_user_id")
     raw_id_fields = ("user",)
+    readonly_fields = ("platform_user_id", "last_seen_at")
+
+    @admin.display(description="User Account", ordering="user__username")
+    def get_user_link(self, obj):
+        url = reverse("admin:auth_user_change", args=[obj.user.id])
+        return format_html('<a href="{}" class="font-weight-bold"><i class="fas fa-user text-primary mr-1"></i>{}</a>', url, obj.user.username)
+
+    @admin.display(description="Organization", ordering="organization__name")
+    def get_org_link(self, obj):
+        if obj.organization:
+            url = reverse("admin:platform_core_organization_change", args=[obj.organization.id])
+            return format_html('<a href="{}" class="font-weight-bold text-dark"><i class="fas fa-building text-success mr-1"></i>{}</a>', url, obj.organization.name)
+        return "—"
+
+    @admin.display(description="Role", ordering="system_role")
+    def get_role_badge(self, obj):
+        role_map = {
+            "platform_super_admin": ("badge-primary", "Platform Super Admin"),
+            "high_super_admin": ("badge-purple", "High Super Admin"),
+            "country_super_admin": ("badge-info", "Country Super Admin"),
+            "country_it_admin": ("badge-teal", "Country IT Admin"),
+            "standard_user": ("badge-secondary", "Standard User"),
+        }
+        badge_class, label = role_map.get(obj.system_role, ("badge-secondary", obj.system_role.replace("_", " ").title()))
+        return format_html('<span class="badge {}">{}</span>', badge_class, label)
+
+    @admin.display(description="Status", ordering="status")
+    def get_status_badge(self, obj):
+        if obj.status == "Active":
+            return format_html('<span class="badge badge-success">Active</span>')
+        elif obj.status == "Suspended":
+            return format_html('<span class="badge badge-warning text-dark">Suspended</span>')
+        return format_html('<span class="badge badge-danger">Inactive</span>')
+
 
 @admin.register(PlatformRecord)
 class PlatformRecordAdmin(admin.ModelAdmin):
-    list_display = ("record_id", "record_type", "organization_id", "country", "status", "created_at")
+    list_display = ("record_id", "get_type_badge", "organization_id", "country", "get_status_badge", "created_at")
     list_filter = ("record_type", "status", "country")
-    search_fields = ("record_id", "record_type", "organization_id")
+    search_fields = ("record_id", "record_type", "organization_id", "country", "user_ref")
     ordering = ("-created_at",)
+
+    @admin.display(description="Record Type", ordering="record_type")
+    def get_type_badge(self, obj):
+        t = obj.record_type or "general"
+        type_colors = {
+            "projects": "badge-primary",
+            "reports": "badge-success",
+            "finance": "badge-info",
+            "documents": "badge-purple",
+            "grants": "badge-teal",
+        }
+        color = type_colors.get(t, "badge-secondary")
+        return format_html('<span class="badge {}">{}</span>', color, t.title())
+
+    @admin.display(description="Status", ordering="status")
+    def get_status_badge(self, obj):
+        s = obj.status or "Active"
+        if s.lower() in {"active", "approved", "published"}:
+            return format_html('<span class="badge badge-success">{}</span>', s)
+        elif s.lower() in {"draft", "pending", "submitted"}:
+            return format_html('<span class="badge badge-warning text-dark">{}</span>', s)
+        return format_html('<span class="badge badge-secondary">{}</span>', s)
+
 
 @admin.register(AuditEvent)
 class AuditEventAdmin(admin.ModelAdmin):
-    list_display = ("occurred_at", "actor", "action", "entity_type", "entity_id", "organization_id")
-    list_filter = ("action", "entity_type", "occurred_at")
-    search_fields = ("action", "entity_id", "organization_id")
+    list_display = ("occurred_at", "actor", "get_action_badge", "entity_type", "entity_id", "organization_id")
+    list_filter = ("action", "entity_type", "organization_id")
+    search_fields = ("actor", "action", "entity_id", "organization_id", "entity_type")
     readonly_fields = ("id", "occurred_at", "actor", "action", "entity_type", "entity_id", "organization_id", "detail")
+    date_hierarchy = "occurred_at"
     ordering = ("-occurred_at",)
+
+    @admin.display(description="Action", ordering="action")
+    def get_action_badge(self, obj):
+        act = obj.action or ""
+        if "sign" in act.lower() or "login" in act.lower():
+            return format_html('<span class="badge badge-info"><i class="fas fa-sign-in-alt mr-1"></i>{}</span>', act)
+        elif "create" in act.lower() or "init" in act.lower() or "add" in act.lower():
+            return format_html('<span class="badge badge-success"><i class="fas fa-plus-circle mr-1"></i>{}</span>', act)
+        elif "update" in act.lower() or "change" in act.lower():
+            return format_html('<span class="badge badge-warning text-dark"><i class="fas fa-edit mr-1"></i>{}</span>', act)
+        elif "delete" in act.lower() or "remove" in act.lower():
+            return format_html('<span class="badge badge-danger"><i class="fas fa-trash mr-1"></i>{}</span>', act)
+        return format_html('<span class="badge badge-secondary">{}</span>', act)
+
 
 @admin.register(ApiSession)
 class ApiSessionAdmin(admin.ModelAdmin):
-    list_display = ("user", "ip_address", "expires_at", "revoked_at", "created_at")
+    list_display = ("user", "ip_address", "get_session_status", "expires_at", "created_at")
     list_filter = ("revoked_at", "expires_at")
     search_fields = ("user__username", "user__email", "ip_address")
     readonly_fields = ("id", "user", "token_hash", "created_at", "expires_at", "user_agent", "ip_address")
     ordering = ("-created_at",)
+    actions = ["revoke_sessions"]
+
+    @admin.display(description="Status")
+    def get_session_status(self, obj):
+        if obj.revoked_at:
+            return format_html('<span class="badge badge-danger"><i class="fas fa-ban mr-1"></i>Revoked</span>')
+        elif obj.expires_at and obj.expires_at < timezone.now():
+            return format_html('<span class="badge badge-secondary"><i class="fas fa-history mr-1"></i>Expired</span>')
+        return format_html('<span class="badge badge-success"><i class="fas fa-key mr-1"></i>Active</span>')
+
+    @admin.action(description="Revoke selected API sessions immediately")
+    def revoke_sessions(self, request, queryset):
+        count = queryset.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
+        self.message_user(request, f"Revoked {count} active API session(s).")
+
 
 @admin.register(FileObject)
 class FileObjectAdmin(admin.ModelAdmin):
-    list_display = ("original_name", "category", "classification", "size_bytes", "owner", "created_at")
+    list_display = ("original_name", "get_category_badge", "classification", "get_formatted_size", "owner", "created_at")
     list_filter = ("category", "classification")
     search_fields = ("original_name", "sha256")
     ordering = ("-created_at",)
 
+    @admin.display(description="Category", ordering="category")
+    def get_category_badge(self, obj):
+        return format_html('<span class="badge badge-info"><i class="fas fa-file mr-1"></i>{}</span>', (obj.category or "file").title())
+
+    @admin.display(description="Size", ordering="size_bytes")
+    def get_formatted_size(self, obj):
+        return format_file_size(obj.size_bytes)
+
+
 @admin.register(Invitation)
 class InvitationAdmin(admin.ModelAdmin):
-    list_display = ("email", "organization", "invited_by", "expires_at", "accepted_at", "created_at")
+    list_display = ("email", "organization", "get_status_badge", "invited_by", "expires_at", "created_at")
     list_filter = ("organization", "accepted_at")
-    search_fields = ("email",)
+    search_fields = ("email", "organization__name")
     ordering = ("-created_at",)
+
+    @admin.display(description="Status")
+    def get_status_badge(self, obj):
+        if obj.accepted_at:
+            return format_html('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Accepted</span>')
+        elif obj.expires_at and obj.expires_at < timezone.now():
+            return format_html('<span class="badge badge-secondary"><i class="fas fa-clock mr-1"></i>Expired</span>')
+        return format_html('<span class="badge badge-warning text-dark"><i class="fas fa-envelope mr-1"></i>Pending</span>')
+
 
 @admin.register(WorkspaceState)
 class WorkspaceStateAdmin(admin.ModelAdmin):
-    list_display = ("key", "revision", "last_saved_by", "updated_at")
+    list_display = ("key", "get_revision_badge", "last_saved_by", "updated_at")
     readonly_fields = ("key", "revision", "updated_at", "created_at")
+
+    @admin.display(description="Revision", ordering="revision")
+    def get_revision_badge(self, obj):
+        return format_html('<span class="badge badge-primary font-weight-bold">v{}</span>', obj.revision)

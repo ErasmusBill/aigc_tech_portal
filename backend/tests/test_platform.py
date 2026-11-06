@@ -34,5 +34,5 @@ def test_custom_user_admin_and_profile_integration():
     assert hasattr(new_user, "platform_profile")
     assert new_user.platform_profile.organization == org
     assert new_user.platform_profile.system_role == "platform_super_admin"
-    assert user_admin.get_organization(new_user) == "Tech4Future Headquarters"
-    assert user_admin.get_system_role(new_user) == "Platform Super Admin"
+    assert "Tech4Future Headquarters" in str(user_admin.get_organization_badge(new_user))
+    assert "Platform Super Admin" in str(user_admin.get_system_role_badge(new_user))

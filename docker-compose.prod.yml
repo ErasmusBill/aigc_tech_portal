@@ -79,6 +79,7 @@ services:
     image: nginx:alpine
     container_name: t4f-prod-nginx
     restart: always
+    profiles: ["docker-nginx"]
     depends_on:
       - web
     ports:

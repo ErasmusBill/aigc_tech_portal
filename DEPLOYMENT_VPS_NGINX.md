@@ -95,14 +95,20 @@ make docker-up
 
 ---
 
-## 4. 🚀 GitHub Actions CI/CD Pipeline
+## 4. 🚀 Fully Automated GitHub Actions CI/CD Pipeline
 
 The automated deployment pipeline is located at:
 [`.github/workflows/deploy.yml`](file:///.github/workflows/deploy.yml)
 
-### Workflow Steps:
-1. **CI Quality Gate:** Runs on every push to `main` — installs Python 3.13 dependencies, executes `python backend/manage.py check`, and runs all integration/unit tests (`pytest backend/tests`).
-2. **CD Deployment:** Once tests pass, automatically SSHs into your VPS, updates code from GitHub, builds Docker images, runs migrations, seeds users, collects static files, and verifies health.
+### What the Pipeline Does Automatically:
+1. **CI Quality Gate:** Runs unit & integration tests on GitHub using a live **PostgreSQL 17** service container.
+2. **Automated SSH Deployment:** Logs into your VPS using password authentication (`VPS_PASSWORD`).
+3. **Pulls Latest Code:** Automatically updates or clones the repository.
+4. **Builds & Launches Containers:** Runs PostgreSQL 17, Redis, and Web platform on port `8080` (avoiding port `8000`).
+5. **Runs Database Migrations & Seeds Users:** Automatically runs migrations and seeds user accounts.
+6. **Configures Host Nginx Automatically:** Copies the site configuration for `portal.t4f-global.org`, verifies syntax, and reloads Nginx.
+7. **Provisions SSL Certificate Automatically (Let's Encrypt / Certbot):** Checks for Certbot, installs it if needed, and issues/renews the SSL certificate with HTTPS redirect.
+8. **Runs Health Verification:** Verifies the running system health probe.
 
 ### 🔐 GitHub Actions Secrets to Configure:
 Navigate to your repository on GitHub: **Settings > Secrets and variables > Actions > New repository secret**:

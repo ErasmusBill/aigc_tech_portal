@@ -9,7 +9,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-t4f_global}
       POSTGRES_USER: ${POSTGRES_USER:-t4f_app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Error: POSTGRES_PASSWORD must be set in production}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-replace-this-production-password}"
     volumes:
       - t4f_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -45,14 +45,14 @@ services:
       redis:
         condition: service_healthy
     environment:
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Error: DJANGO_SECRET_KEY must be set in production}
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:-replace-with-a-long-random-secret-for-production}"
       DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-portal.t4f-global.org,localhost,127.0.0.1,web}
       DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-https://portal.t4f-global.org,http://portal.t4f-global.org}
       DB_ENGINE: postgresql
       POSTGRES_DB: ${POSTGRES_DB:-t4f_global}
       POSTGRES_USER: ${POSTGRES_USER:-t4f_app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Error: POSTGRES_PASSWORD must be set in production}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-replace-this-production-password}"
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       POSTGRES_SSLMODE: ${POSTGRES_SSLMODE:-disable}

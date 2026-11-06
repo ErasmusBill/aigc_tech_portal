@@ -236,14 +236,30 @@ jobs:
               fi
             done
 
+            if [ -z "$NGINX_BIN" ]; then
+              echo "==> Nginx binary not found. Checking active listeners on port 80/443..."
+              run_sudo ss -tlpn | grep -E ':80|:443' || true
+              if command -v apt-get >/dev/null 2>&1; then
+                echo "==> Installing nginx, certbot, and python3-certbot-nginx..."
+                run_sudo apt-get update -y
+                run_sudo apt-get install -y nginx certbot python3-certbot-nginx
+                NGINX_BIN=$(which nginx 2>/dev/null || echo "/usr/sbin/nginx")
+              fi
+            fi
+
             if [ -n "$NGINX_BIN" ] && [ -f "$NGINX_CONF" ]; then
-              echo "==> Found Nginx at: $NGINX_BIN"
-              if [ -d "/etc/nginx/sites-available" ]; then
-                echo "==> Deploying Nginx site to /etc/nginx/sites-available..."
-                run_sudo cp "$NGINX_CONF" /etc/nginx/sites-available/portal.t4f-global.org
-                run_sudo ln -sf /etc/nginx/sites-available/portal.t4f-global.org /etc/nginx/sites-enabled/
+              echo "==> Using Nginx at: $NGINX_BIN"
+              
+              # Deploy site config with .conf extension
+              if grep -q "sites-enabled" /etc/nginx/nginx.conf 2>/dev/null || [ -d "/etc/nginx/sites-available" ]; then
+                echo "==> Deploying Nginx site to /etc/nginx/sites-available/portal.t4f-global.org.conf..."
+                run_sudo mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
+                run_sudo cp "$NGINX_CONF" /etc/nginx/sites-available/portal.t4f-global.org.conf
+                run_sudo ln -sf /etc/nginx/sites-available/portal.t4f-global.org.conf /etc/nginx/sites-enabled/portal.t4f-global.org.conf
+                # Clean up legacy unextended links if present
+                run_sudo rm -f /etc/nginx/sites-available/portal.t4f-global.org /etc/nginx/sites-enabled/portal.t4f-global.org 2>/dev/null || true
               elif [ -d "/etc/nginx/conf.d" ]; then
-                echo "==> Deploying Nginx site to /etc/nginx/conf.d..."
+                echo "==> Deploying Nginx site to /etc/nginx/conf.d/portal.t4f-global.org.conf..."
                 run_sudo cp "$NGINX_CONF" /etc/nginx/conf.d/portal.t4f-global.org.conf
               fi
 
@@ -262,20 +278,14 @@ jobs:
                 done
 
                 if [ -n "$CERTBOT_BIN" ]; then
-                  if [ ! -d "/etc/letsencrypt/live/portal.t4f-global.org" ]; then
-                    echo "==> Issuing Let's Encrypt SSL certificate for portal.t4f-global.org..."
-                    run_sudo "$CERTBOT_BIN" --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect || true
-                  else
-                    echo "==> SSL certificate already active in /etc/letsencrypt/live/portal.t4f-global.org"
-                  fi
+                  echo "==> Provisioning / verifying Let's Encrypt SSL certificate for portal.t4f-global.org..."
+                  run_sudo "$CERTBOT_BIN" --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect || true
                 else
                   echo "==> [Notice] Certbot binary not found in standard paths."
                 fi
               else
                 echo "::warning::Nginx configuration test failed, skipping reload to prevent downtime."
               fi
-            elif [ -z "$NGINX_BIN" ]; then
-              echo "==> [Notice] Nginx not found in standard binary locations (/usr/sbin/nginx, etc.)."
             fi
 
             # Health Check (Retry loop)

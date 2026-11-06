@@ -125,10 +125,11 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }}
           key: ${{ secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
           port: ${{ vars.VPS_PORT || 22 }}
+          request_pty: true
           script_stop: true
+          command_timeout: 30m
           script: |
-            TARGET_DIR="${{ vars.DEPLOY_PATH || '/var/www/portal.t4f-global.org' }}"
-            echo "==> Deploying to target directory: $TARGET_DIR..."
+            set -e
 
             # Sudo helper that works with root, passwordless sudo, or password prompt
             run_sudo() {
@@ -141,6 +142,17 @@ jobs:
               fi
             }
 
+            # Determine Target Directory
+            if [ -n "${{ vars.DEPLOY_PATH }}" ]; then
+              TARGET_DIR="${{ vars.DEPLOY_PATH }}"
+            elif [ "$(id -u)" -eq 0 ]; then
+              TARGET_DIR="/var/www/portal.t4f-global.org"
+            else
+              TARGET_DIR="$HOME/portal.t4f-global.org"
+            fi
+
+            echo "==> Deploying to target directory: $TARGET_DIR..."
+
             # Ensure git is installed
             if ! command -v git >/dev/null 2>&1; then
               echo "==> Installing git on VPS..."
@@ -150,15 +162,15 @@ jobs:
             # Check if directory exists and has git repo initialized
             if [ ! -d "$TARGET_DIR/.git" ]; then
               echo "==> Repository not initialized in $TARGET_DIR. Cloning via HTTPS..."
-              run_sudo mkdir -p "$TARGET_DIR"
-              run_sudo chown -R "$(whoami)":"$(whoami)" "$TARGET_DIR"
-              git clone https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git "$TARGET_DIR"
+              mkdir -p "$TARGET_DIR" 2>/dev/null || run_sudo mkdir -p "$TARGET_DIR"
+              run_sudo chown -R "$(whoami)":"$(whoami)" "$TARGET_DIR" 2>/dev/null || true
+              git clone https://github.com/ErasmusBill/aigc_tech_portal.git "$TARGET_DIR"
             fi
 
             cd "$TARGET_DIR"
 
-            # Set authenticated HTTPS remote URL using ephemeral GitHub token
-            git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+            # Ensure remote is clean HTTPS
+            git remote set-url origin https://github.com/ErasmusBill/aigc_tech_portal.git
 
             # Pull latest changes
             echo "==> Pulling latest changes from origin/main..."
@@ -171,7 +183,7 @@ jobs:
             elif sudo -n docker info >/dev/null 2>&1; then
               DOCKER_COMPOSE="sudo docker compose"
             else
-              DOCKER_COMPOSE="echo ${{ secrets.VPS_PASSWORD }} | sudo -S docker compose"
+              DOCKER_COMPOSE="echo ${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }} | sudo -S docker compose"
             fi
 
             # Ensure .env exists

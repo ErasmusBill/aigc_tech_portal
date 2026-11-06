@@ -85,13 +85,45 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
+      - name: Validate Deployment Credentials
+        run: |
+          HAS_ERRORS=0
+          if [ -z "${{ secrets.VPS_HOST || vars.VPS_HOST }}" ]; then
+            echo "::error::Missing VPS_HOST! Please add VPS_HOST in GitHub: Settings > Secrets and variables > Actions > Secrets (or Variables)."
+            HAS_ERRORS=1
+          fi
+          if [ -z "${{ secrets.VPS_USERNAME || vars.VPS_USERNAME }}" ]; then
+            echo "::error::Missing VPS_USERNAME! Please add VPS_USERNAME in GitHub: Settings > Secrets and variables > Actions > Secrets (or Variables)."
+            HAS_ERRORS=1
+          fi
+          if [ -z "${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }}" ] && [ -z "${{ secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}" ]; then
+            echo "::error::Missing VPS_PASSWORD or VPS_SSH_KEY! Please add VPS_PASSWORD in GitHub: Settings > Secrets and variables > Actions > Secrets."
+            HAS_ERRORS=1
+          fi
+          if [ "$HAS_ERRORS" -eq 1 ]; then
+            echo ""
+            echo "=================================================================================="
+            echo "❌ Setup Guide: How to configure your VPS credentials in GitHub:"
+            echo "1. Go to your repository on GitHub."
+            echo "2. Click 'Settings' (gear icon) at the top."
+            echo "3. In the left sidebar, click 'Secrets and variables' -> 'Actions'."
+            echo "4. Under the 'Secrets' tab, click the green 'New repository secret' button."
+            echo "5. Add each secret:"
+            echo "     Name: VPS_HOST       Value: <your VPS IP address, e.g. 187.7.19.226>"
+            echo "     Name: VPS_USERNAME   Value: <your SSH username, e.g. root or erasmus>"
+            echo "     Name: VPS_PASSWORD   Value: <your SSH login password>"
+            echo "=================================================================================="
+            exit 1
+          fi
+          echo "✅ All required deployment credentials found."
+
       - name: Execute Remote Deployment via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          password: ${{ secrets.VPS_PASSWORD }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          host: ${{ secrets.VPS_HOST || vars.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME || vars.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
           port: ${{ vars.VPS_PORT || 22 }}
           script_stop: true
           script: |
@@ -105,7 +137,7 @@ jobs:
               elif sudo -n true 2>/dev/null; then
                 sudo "$@"
               else
-                echo "${{ secrets.VPS_PASSWORD }}" | sudo -S -p '' "$@"
+                echo "${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }}" | sudo -S -p '' "$@"
               fi
             }
 

@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from .models import (
     Organization,
     Position,
@@ -248,7 +249,7 @@ class CustomUserAdmin(BaseUserAdmin):
                 url,
                 profile.organization.name,
             )
-        return format_html('<span class="text-muted font-italic">Unassigned</span>')
+        return mark_safe('<span class="text-muted font-italic">Unassigned</span>')
 
     @admin.display(description="System Role", ordering="platform_profile__system_role")
     def get_system_role_badge(self, obj):
@@ -269,18 +270,18 @@ class CustomUserAdmin(BaseUserAdmin):
         profile = getattr(obj, "platform_profile", None)
         status = profile.status if profile else ("Active" if obj.is_active else "Inactive")
         if status == "Active":
-            return format_html('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Active</span>')
+            return mark_safe('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Active</span>')
         elif status == "Suspended":
-            return format_html('<span class="badge badge-warning text-dark"><i class="fas fa-pause-circle mr-1"></i>Suspended</span>')
-        return format_html('<span class="badge badge-danger"><i class="fas fa-times-circle mr-1"></i>Inactive</span>')
+            return mark_safe('<span class="badge badge-warning text-dark"><i class="fas fa-pause-circle mr-1"></i>Suspended</span>')
+        return mark_safe('<span class="badge badge-danger"><i class="fas fa-times-circle mr-1"></i>Inactive</span>')
 
     @admin.display(description="Access Tier")
     def get_staff_badge(self, obj):
         if obj.is_superuser:
-            return format_html('<span class="badge badge-danger"><i class="fas fa-user-shield mr-1"></i>Superuser</span>')
+            return mark_safe('<span class="badge badge-danger"><i class="fas fa-user-shield mr-1"></i>Superuser</span>')
         elif obj.is_staff:
-            return format_html('<span class="badge badge-primary"><i class="fas fa-user-tie mr-1"></i>Staff Admin</span>')
-        return format_html('<span class="badge badge-light border text-muted">Portal User</span>')
+            return mark_safe('<span class="badge badge-primary"><i class="fas fa-user-tie mr-1"></i>Staff Admin</span>')
+        return mark_safe('<span class="badge badge-light border text-muted">Portal User</span>')
 
     @admin.action(description="Activate selected users")
     def activate_users(self, request, queryset):
@@ -360,20 +361,20 @@ class OrganizationAdmin(admin.ModelAdmin):
     def get_type_badge(self, obj):
         t = obj.organization_type or "general"
         if t == "global_hq":
-            return format_html('<span class="badge badge-primary"><i class="fas fa-landmark mr-1"></i>Global HQ</span>')
+            return mark_safe('<span class="badge badge-primary"><i class="fas fa-landmark mr-1"></i>Global HQ</span>')
         elif t == "country_office":
-            return format_html('<span class="badge badge-success"><i class="fas fa-globe-africa mr-1"></i>Country Office</span>')
+            return mark_safe('<span class="badge badge-success"><i class="fas fa-globe-africa mr-1"></i>Country Office</span>')
         elif t == "external_partner":
-            return format_html('<span class="badge badge-info"><i class="fas fa-handshake mr-1"></i>Partner</span>')
+            return mark_safe('<span class="badge badge-info"><i class="fas fa-handshake mr-1"></i>Partner</span>')
         elif t == "fiscal_sponsor":
-            return format_html('<span class="badge badge-warning text-dark"><i class="fas fa-donate mr-1"></i>Fiscal Sponsor</span>')
+            return mark_safe('<span class="badge badge-warning text-dark"><i class="fas fa-donate mr-1"></i>Fiscal Sponsor</span>')
         return format_html('<span class="badge badge-secondary">{}</span>', t.replace("_", " ").title())
 
     @admin.display(description="Status", ordering="status")
     def get_status_badge(self, obj):
         if obj.status == "Active":
-            return format_html('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Active</span>')
-        return format_html('<span class="badge badge-danger"><i class="fas fa-times-circle mr-1"></i>Inactive</span>')
+            return mark_safe('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Active</span>')
+        return mark_safe('<span class="badge badge-danger"><i class="fas fa-times-circle mr-1"></i>Inactive</span>')
 
     @admin.display(description="Assigned Staff")
     def get_user_count(self, obj):
@@ -455,10 +456,10 @@ class PlatformProfileAdmin(admin.ModelAdmin):
     @admin.display(description="Status", ordering="status")
     def get_status_badge(self, obj):
         if obj.status == "Active":
-            return format_html('<span class="badge badge-success">Active</span>')
+            return mark_safe('<span class="badge badge-success">Active</span>')
         elif obj.status == "Suspended":
-            return format_html('<span class="badge badge-warning text-dark">Suspended</span>')
-        return format_html('<span class="badge badge-danger">Inactive</span>')
+            return mark_safe('<span class="badge badge-warning text-dark">Suspended</span>')
+        return mark_safe('<span class="badge badge-danger">Inactive</span>')
 
 
 @admin.register(PlatformRecord)
@@ -526,10 +527,10 @@ class ApiSessionAdmin(admin.ModelAdmin):
     @admin.display(description="Status")
     def get_session_status(self, obj):
         if obj.revoked_at:
-            return format_html('<span class="badge badge-danger"><i class="fas fa-ban mr-1"></i>Revoked</span>')
+            return mark_safe('<span class="badge badge-danger"><i class="fas fa-ban mr-1"></i>Revoked</span>')
         elif obj.expires_at and obj.expires_at < timezone.now():
-            return format_html('<span class="badge badge-secondary"><i class="fas fa-history mr-1"></i>Expired</span>')
-        return format_html('<span class="badge badge-success"><i class="fas fa-key mr-1"></i>Active</span>')
+            return mark_safe('<span class="badge badge-secondary"><i class="fas fa-history mr-1"></i>Expired</span>')
+        return mark_safe('<span class="badge badge-success"><i class="fas fa-key mr-1"></i>Active</span>')
 
     @admin.action(description="Revoke selected API sessions immediately")
     def revoke_sessions(self, request, queryset):
@@ -563,10 +564,10 @@ class InvitationAdmin(admin.ModelAdmin):
     @admin.display(description="Status")
     def get_status_badge(self, obj):
         if obj.accepted_at:
-            return format_html('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Accepted</span>')
+            return mark_safe('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Accepted</span>')
         elif obj.expires_at and obj.expires_at < timezone.now():
-            return format_html('<span class="badge badge-secondary"><i class="fas fa-clock mr-1"></i>Expired</span>')
-        return format_html('<span class="badge badge-warning text-dark"><i class="fas fa-envelope mr-1"></i>Pending</span>')
+            return mark_safe('<span class="badge badge-secondary"><i class="fas fa-clock mr-1"></i>Expired</span>')
+        return mark_safe('<span class="badge badge-warning text-dark"><i class="fas fa-envelope mr-1"></i>Pending</span>')
 
 
 @admin.register(WorkspaceState)

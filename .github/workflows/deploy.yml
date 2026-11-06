@@ -232,10 +232,14 @@ jobs:
             echo "================================================================"
             echo "==> DIAGNOSTICS: Inspecting listeners on port 80 and 443..."
             run_sudo ss -tulpn | grep -E ':80\b|:443\b' || true
-            echo "==> DIAGNOSTICS: Inspecting all running Docker containers..."
-            run_docker ps -a || true
-            echo "==> DIAGNOSTICS: Checking systemd Nginx status..."
-            run_sudo systemctl status nginx --no-pager || true
+            echo "==> DIAGNOSTICS: Inspecting ALL Docker containers across VPS..."
+            if command -v docker >/dev/null 2>&1; then
+              docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}" || true
+            else
+              run_sudo docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}" || true
+            fi
+            echo "==> DIAGNOSTICS: Docker proxy process info for port 80:"
+            run_sudo ps -fp 33337 2>/dev/null || run_sudo pgrep -af docker-proxy || true
             echo "================================================================"
 
             # Stop competing apache2 service if active

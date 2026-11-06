@@ -120,144 +120,120 @@ jobs:
       - name: Execute Remote Deployment via SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
-          TARGET_OVERRIDE: ${{ vars.DEPLOY_PATH }}
           USER_PASS: ${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }}
+          DEPLOY_OVERRIDE: ${{ vars.DEPLOY_PATH }}
         with:
           host: ${{ secrets.VPS_HOST || vars.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME || vars.VPS_USERNAME }}
           password: ${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }}
           key: ${{ secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
           port: ${{ vars.VPS_PORT || 22 }}
-          request_pty: true
-          debug: true
-          script_stop: true
+          script_stop: false
           command_timeout: 30m
-          envs: TARGET_OVERRIDE,USER_PASS
+          envs: USER_PASS,DEPLOY_OVERRIDE
           script: |
-            set -e
+            echo "================================================================"
+            echo "==> SSH connection successfully established!"
+            echo "==> Connected as user: $(whoami)"
+            echo "==> Working directory: $(pwd)"
+            echo "================================================================"
 
-            # Sudo helper that works with root, passwordless sudo, or password prompt
-            run_sudo() {
-              if [ "$(id -u)" -eq 0 ]; then
-                "$@"
-              elif sudo -n true 2>/dev/null; then
-                sudo "$@"
-              elif [ -n "$USER_PASS" ]; then
-                echo "$USER_PASS" | sudo -S -p '' "$@"
-              else
-                sudo "$@"
-              fi
-            }
-
-            # Determine Target Directory
-            if [ -n "$TARGET_OVERRIDE" ]; then
-              TARGET_DIR="$TARGET_OVERRIDE"
-            elif [ "$(id -u)" -eq 0 ]; then
-              TARGET_DIR="/var/www/portal.t4f-global.org"
+            # Target directory in user's home (safe from root/sudo permission blocks)
+            if [ -n "$DEPLOY_OVERRIDE" ]; then
+              TARGET_DIR="$DEPLOY_OVERRIDE"
             else
-              TARGET_DIR="$HOME/portal.t4f-global.org"
+              TARGET_DIR="$HOME/aigc_tech_portal"
             fi
+            echo "==> Target project directory: $TARGET_DIR"
 
-            echo "==> Deploying to target directory: $TARGET_DIR..."
-
-            # Ensure git is installed
+            # Ensure git is available
             if ! command -v git >/dev/null 2>&1; then
-              echo "==> Installing git on VPS..."
-              run_sudo apt-get update -q && run_sudo apt-get install -y -q git
+              echo "Error: git is not installed on this VPS."
+              exit 1
             fi
 
-            # Check if directory exists and has git repo initialized
+            # Clone repository if not present
             if [ ! -d "$TARGET_DIR/.git" ]; then
-              echo "==> Repository not initialized in $TARGET_DIR. Cloning via HTTPS..."
-              mkdir -p "$TARGET_DIR" 2>/dev/null || run_sudo mkdir -p "$TARGET_DIR"
-              run_sudo chown -R "$(whoami)":"$(whoami)" "$TARGET_DIR" 2>/dev/null || true
+              echo "==> Initializing and cloning repository into $TARGET_DIR..."
+              mkdir -p "$TARGET_DIR"
               git clone https://github.com/ErasmusBill/aigc_tech_portal.git "$TARGET_DIR"
             fi
 
             cd "$TARGET_DIR"
+            echo "==> Current repo path: $(pwd)"
 
-            # Ensure remote is clean HTTPS
+            # Ensure remote URL is clean HTTPS
             git remote set-url origin https://github.com/ErasmusBill/aigc_tech_portal.git
-
-            # Pull latest changes
-            echo "==> Pulling latest changes from origin/main..."
+            echo "==> Pulling latest changes from main branch..."
             git fetch origin main
             git reset --hard origin/main
+            echo "==> Deployed Commit: $(git rev-parse --short HEAD)"
 
-            # Determine docker command
-            if docker info >/dev/null 2>&1; then
-              DOCKER_COMPOSE="docker compose"
-            elif sudo -n docker info >/dev/null 2>&1; then
-              DOCKER_COMPOSE="sudo docker compose"
+            # Determine Docker command
+            if docker compose version >/dev/null 2>&1; then
+              DOCKER="docker compose"
+            elif sudo -n docker compose version >/dev/null 2>&1; then
+              DOCKER="sudo docker compose"
+            elif [ -n "$USER_PASS" ]; then
+              DOCKER="echo '$USER_PASS' | sudo -S docker compose"
             else
-              DOCKER_COMPOSE="echo ${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }} | sudo -S docker compose"
+              DOCKER="docker compose"
             fi
+            echo "==> Using Docker runner: $DOCKER"
 
             # Ensure .env exists
             if [ ! -f .env ]; then
-              echo "==> Notice: .env not found on server. Creating from .env.production.example..."
+              echo "==> Generating .env from .env.production.example..."
               cp .env.production.example .env
-              echo "IMPORTANT: Verify production database and secret settings in $TARGET_DIR/.env"
             fi
 
-            # Build and launch production Docker stack (Web port 8080)
-            echo "==> Building and starting Docker Compose containers (Web port 8080)..."
-            $DOCKER_COMPOSE -f docker-compose.prod.yml build
-            $DOCKER_COMPOSE -f docker-compose.prod.yml up -d
+            # Build and start Docker stack (PostgreSQL 17, Redis, Web on port 8080)
+            echo "==> Starting production containers..."
+            $DOCKER -f docker-compose.prod.yml build
+            $DOCKER -f docker-compose.prod.yml up -d
 
             # Run database migrations
-            echo "==> Executing PostgreSQL migrations..."
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
+            echo "==> Running database migrations..."
+            $DOCKER -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
 
-            # Collect static files for WhiteNoise
+            # Collect static files
             echo "==> Collecting static assets..."
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput || true
+            $DOCKER -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput || true
 
-            # Seed / sync platform users
-            echo "==> Verifying platform users..."
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T web python manage.py seed_all_users || true
+            # Seed platform users
+            echo "==> Seeding platform users..."
+            $DOCKER -f docker-compose.prod.yml exec -T web python manage.py seed_all_users || true
 
-            # ================================================================
-            # 3. Automatically Configure Host Nginx & SSL Certificate
-            # ================================================================
-            echo "==> Checking Host Nginx configuration..."
-            if ! command -v nginx >/dev/null 2>&1; then
-              echo "==> Installing Nginx on host..."
-              run_sudo apt-get update -q && run_sudo apt-get install -y -q nginx
+            # Configure Host Nginx & SSL
+            echo "==> Setting up Host Nginx configuration..."
+            NGINX_CONF="$TARGET_DIR/docker/nginx/host-nginx-portal.t4f-global.org.conf"
+            if [ -f "$NGINX_CONF" ] && [ -d "/etc/nginx/sites-available" ]; then
+              echo "==> Deploying Nginx site config for portal.t4f-global.org..."
+              if sudo -n true 2>/dev/null; then
+                sudo cp "$NGINX_CONF" /etc/nginx/sites-available/portal.t4f-global.org
+                sudo ln -sf /etc/nginx/sites-available/portal.t4f-global.org /etc/nginx/sites-enabled/
+                sudo nginx -t && sudo systemctl reload nginx || true
+                if command -v certbot >/dev/null 2>&1 && [ ! -d "/etc/letsencrypt/live/portal.t4f-global.org" ]; then
+                  sudo certbot --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect || true
+                fi
+              elif [ -n "$USER_PASS" ]; then
+                echo "$USER_PASS" | sudo -S cp "$NGINX_CONF" /etc/nginx/sites-available/portal.t4f-global.org || true
+                echo "$USER_PASS" | sudo -S ln -sf /etc/nginx/sites-available/portal.t4f-global.org /etc/nginx/sites-enabled/ || true
+                echo "$USER_PASS" | sudo -S nginx -t && echo "$USER_PASS" | sudo -S systemctl reload nginx || true
+                if [ ! -d "/etc/letsencrypt/live/portal.t4f-global.org" ]; then
+                  echo "$USER_PASS" | sudo -S certbot --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect || true
+                fi
+              fi
             fi
 
-            echo "==> Deploying Nginx site config for portal.t4f-global.org..."
-            run_sudo mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
-            run_sudo cp docker/nginx/host-nginx-portal.t4f-global.org.conf /etc/nginx/sites-available/portal.t4f-global.org
-            run_sudo ln -sf /etc/nginx/sites-available/portal.t4f-global.org /etc/nginx/sites-enabled/
-            run_sudo nginx -t && run_sudo systemctl reload nginx
-            echo "==> Host Nginx successfully configured and reloaded."
-
-            # Automatically install Certbot and provision SSL
-            echo "==> Checking SSL certificate for portal.t4f-global.org..."
-            if ! command -v certbot >/dev/null 2>&1; then
-              echo "==> Installing Certbot and python3-certbot-nginx..."
-              run_sudo apt-get update -q && run_sudo apt-get install -y -q certbot python3-certbot-nginx
-            fi
-
-            # Provision SSL certificate if not already created
-            if [ ! -d "/etc/letsencrypt/live/portal.t4f-global.org" ]; then
-              echo "==> Requesting new Let's Encrypt SSL certificate for portal.t4f-global.org..."
-              run_sudo certbot --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email "${SSL_EMAIL:-admin@t4f-global.org}" --redirect || echo "Notice: Certbot DNS challenge will complete once DNS points to this server IP."
-            else
-              echo "==> [OK] SSL Certificate for portal.t4f-global.org is already active."
-            fi
-
-            # ================================================================
-            # 4. Final Health Check
-            # ================================================================
-            echo "==> Running system health probe..."
+            # Health Check
+            echo "==> Checking application health on port 8080..."
             sleep 4
-            HEALTH_URL="http://127.0.0.1:8080/api/v1/system/health"
-            if curl -sf "$HEALTH_URL" > /dev/null; then
-              echo "==> [OK] System is healthy and responding at $HEALTH_URL"
+            if curl -sf http://127.0.0.1:8080/api/v1/system/health > /dev/null; then
+              echo "==> [SUCCESS] App is healthy and responding at http://127.0.0.1:8080"
             else
-              echo "==> [NOTICE] Container is starting up. Check logs if needed."
+              echo "==> [NOTICE] Containers launched. Checking docker status:"
+              $DOCKER -f docker-compose.prod.yml ps
             fi
 
             echo "================================================================"

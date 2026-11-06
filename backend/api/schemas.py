@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 class LoginRequest(BaseModel):
     organization_id: str
-    email: EmailStr
+    email: str = Field(min_length=1, description="Username or email address")
     password: str = Field(min_length=1)
 
 class UserPayload(BaseModel):

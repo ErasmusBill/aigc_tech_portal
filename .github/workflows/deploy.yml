@@ -169,16 +169,18 @@ jobs:
             git reset --hard origin/main
             echo "==> Deployed Commit: $(git rev-parse --short HEAD)"
 
+            export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+
             # Define robust sudo and docker runners
             run_sudo() {
               if [ "$(id -u)" -eq 0 ]; then
-                "$@"
+                env PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH" "$@"
               elif sudo -n true 2>/dev/null; then
-                sudo "$@"
+                sudo env PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH" "$@"
               elif [ -n "$USER_PASS" ]; then
-                echo "$USER_PASS" | sudo -S -p '' "$@"
+                echo "$USER_PASS" | sudo -S -p '' env PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH" "$@"
               else
-                "$@"
+                env PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH" "$@"
               fi
             }
 
@@ -209,9 +211,9 @@ jobs:
             run_docker -f docker-compose.prod.yml build
             run_docker -f docker-compose.prod.yml up -d
 
-            # Run database migrations
+            # Run database migrations with fake-initial support for pre-existing tables
             echo "==> Running database migrations..."
-            run_docker -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
+            run_docker -f docker-compose.prod.yml exec -T web python manage.py migrate --fake-initial --noinput
 
             # Collect static files
             echo "==> Collecting static assets..."
@@ -224,7 +226,18 @@ jobs:
             # Configure Host Nginx & SSL
             echo "==> Setting up Host Nginx configuration..."
             NGINX_CONF="$TARGET_DIR/docker/nginx/host-nginx-portal.t4f-global.org.conf"
-            if [ -f "$NGINX_CONF" ]; then
+
+            # Locate Nginx binary across system paths
+            NGINX_BIN=""
+            for p in $(which nginx 2>/dev/null) /usr/sbin/nginx /usr/local/sbin/nginx /usr/bin/nginx; do
+              if [ -x "$p" ]; then
+                NGINX_BIN="$p"
+                break
+              fi
+            done
+
+            if [ -n "$NGINX_BIN" ] && [ -f "$NGINX_CONF" ]; then
+              echo "==> Found Nginx at: $NGINX_BIN"
               if [ -d "/etc/nginx/sites-available" ]; then
                 echo "==> Deploying Nginx site to /etc/nginx/sites-available..."
                 run_sudo cp "$NGINX_CONF" /etc/nginx/sites-available/portal.t4f-global.org
@@ -235,24 +248,34 @@ jobs:
               fi
 
               # Validate and reload Nginx
-              if run_sudo nginx -t; then
-                echo "==> Reloading Nginx..."
-                run_sudo systemctl reload nginx || run_sudo service nginx reload || true
+              if run_sudo "$NGINX_BIN" -t; then
+                echo "==> Nginx test passed. Reloading Nginx service..."
+                run_sudo systemctl reload nginx 2>/dev/null || run_sudo service nginx reload 2>/dev/null || run_sudo "$NGINX_BIN" -s reload || true
 
                 # Automatic Let's Encrypt SSL via Certbot
-                if command -v certbot >/dev/null 2>&1; then
+                CERTBOT_BIN=""
+                for cb in $(which certbot 2>/dev/null) /usr/bin/certbot /usr/local/bin/certbot /snap/bin/certbot; do
+                  if [ -x "$cb" ]; then
+                    CERTBOT_BIN="$cb"
+                    break
+                  fi
+                done
+
+                if [ -n "$CERTBOT_BIN" ]; then
                   if [ ! -d "/etc/letsencrypt/live/portal.t4f-global.org" ]; then
                     echo "==> Issuing Let's Encrypt SSL certificate for portal.t4f-global.org..."
-                    run_sudo certbot --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect || true
+                    run_sudo "$CERTBOT_BIN" --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect || true
                   else
                     echo "==> SSL certificate already active in /etc/letsencrypt/live/portal.t4f-global.org"
                   fi
                 else
-                  echo "==> [Notice] Certbot is not installed on this VPS host."
+                  echo "==> [Notice] Certbot binary not found in standard paths."
                 fi
               else
                 echo "::warning::Nginx configuration test failed, skipping reload to prevent downtime."
               fi
+            elif [ -z "$NGINX_BIN" ]; then
+              echo "==> [Notice] Nginx not found in standard binary locations (/usr/sbin/nginx, etc.)."
             fi
 
             # Health Check (Retry loop)

@@ -160,14 +160,9 @@ def test_user_provisioning_and_password_change_atomic():
     assert user_obj.check_password(temp)
     assert user_obj.platform_profile.must_reset is True
 
-    # Attempting to change to non-8-character password fails
-    with pytest.raises(ValueError) as exc:
-        change_user_password(user_obj, current_password="", new_password="TooLongPassword123!")
-    assert "8 characters long" in str(exc.value)
-
-    # Atomic change password with exactly 8 characters succeeds
-    res = change_user_password(user_obj, current_password="", new_password="T4F@2026")
+    # Password change succeeds with any chosen password without restrictive rules
+    res = change_user_password(user_obj, current_password="", new_password="AnyCustomPassword!")
     assert res["ok"] is True
     user_obj.refresh_from_db()
-    assert user_obj.check_password("T4F@2026")
+    assert user_obj.check_password("AnyCustomPassword!")
     assert user_obj.platform_profile.must_reset is False

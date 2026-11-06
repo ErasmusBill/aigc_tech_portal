@@ -110,3 +110,4 @@ def admin_dashboard_stats(request):
                 "chart_audit_data_json": json.dumps([1]),
             }
         }
+

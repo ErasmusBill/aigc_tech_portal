@@ -1,6 +1,8 @@
 import uuid
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import (
     Organization,
@@ -12,10 +14,12 @@ from .models import (
     AuditEvent,
     FileObject,
     Invitation,
+    SYSTEM_ROLE_CHOICES,
+    STATUS_CHOICES,
 )
 
 # ==============================================================================
-# Platform Profile Inline for User Admin
+# Platform Profile Inline for User Admin (Change View)
 # ==============================================================================
 class PlatformProfileInline(admin.StackedInline):
     model = PlatformProfile
@@ -34,12 +38,77 @@ class PlatformProfileInline(admin.StackedInline):
     extra = 0
 
 # ==============================================================================
+# Custom User Creation Form (Add View with Organization & Position)
+# ==============================================================================
+class CustomUserCreationForm(UserCreationForm):
+    first_name = forms.CharField(max_length=150, required=False, label="First Name")
+    last_name = forms.CharField(max_length=150, required=False, label="Last Name")
+    email = forms.EmailField(
+        required=True,
+        label="Email Address",
+        help_text="Required for portal login and communications.",
+    )
+    organization = forms.ModelChoiceField(
+        queryset=Organization.objects.all(),
+        required=False,
+        label="Organization",
+        help_text="Assign user to Headquarters or one of the 16 West Africa Country Portals.",
+    )
+    position = forms.ModelChoiceField(
+        queryset=Position.objects.all(),
+        required=False,
+        label="Hierarchy Position",
+        help_text="Select their standardized operational position / job title.",
+    )
+    system_role = forms.ChoiceField(
+        choices=SYSTEM_ROLE_CHOICES,
+        initial="standard_user",
+        label="System Access Role",
+        help_text="Controls operational permissions and security tier.",
+    )
+    status = forms.ChoiceField(
+        choices=STATUS_CHOICES,
+        initial="Active",
+        label="Portal Status",
+    )
+    must_reset = forms.BooleanField(
+        required=False,
+        initial=False,
+        label="Must Reset Password",
+        help_text="Prompt user to change temporary password upon first login.",
+    )
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = (
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "organization",
+            "position",
+            "system_role",
+            "status",
+            "must_reset",
+        )
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data.get("email")
+        user.first_name = self.cleaned_data.get("first_name", "")
+        user.last_name = self.cleaned_data.get("last_name", "")
+        if commit:
+            user.save()
+        return user
+
+# ==============================================================================
 # Custom User Admin with Profile Integration
 # ==============================================================================
 admin.site.unregister(User)
 
 @admin.register(User)
 class CustomUserAdmin(BaseUserAdmin):
+    add_form = CustomUserCreationForm
     inlines = [PlatformProfileInline]
     list_display = (
         "username",
@@ -69,6 +138,42 @@ class CustomUserAdmin(BaseUserAdmin):
     )
     ordering = ("username",)
 
+    add_fieldsets = (
+        (
+            "Account Credentials",
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "username",
+                    "email",
+                    "first_name",
+                    "last_name",
+                    "password1",
+                    "password2",
+                ),
+            },
+        ),
+        (
+            "Platform Hierarchy & Organization Assignment",
+            {
+                "classes": ("wide",),
+                "description": "Assign this user to an Organization and operational Position immediately upon creation.",
+                "fields": (
+                    "organization",
+                    "position",
+                    "system_role",
+                    "status",
+                    "must_reset",
+                ),
+            },
+        ),
+    )
+
+    def get_inlines(self, request, obj=None):
+        if obj is None:
+            return []
+        return self.inlines
+
     @admin.display(description="Organization", ordering="platform_profile__organization")
     def get_organization(self, obj):
         profile = getattr(obj, "platform_profile", None)
@@ -86,8 +191,25 @@ class CustomUserAdmin(BaseUserAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        # Ensure a platform profile exists for every user
-        if not hasattr(obj, "platform_profile"):
+        if not change and hasattr(form, "cleaned_data"):
+            hq = Organization.objects.filter(pk="t4f-hq").first()
+            org = form.cleaned_data.get("organization") or hq
+            pos = form.cleaned_data.get("position")
+            role = form.cleaned_data.get("system_role") or ("platform_super_admin" if obj.is_superuser else "standard_user")
+            status_val = form.cleaned_data.get("status") or "Active"
+            must_reset_val = form.cleaned_data.get("must_reset", False)
+            PlatformProfile.objects.update_or_create(
+                user=obj,
+                defaults={
+                    "platform_user_id": str(uuid.uuid4()),
+                    "organization": org,
+                    "position": pos,
+                    "system_role": role,
+                    "status": status_val,
+                    "must_reset": must_reset_val,
+                },
+            )
+        elif not hasattr(obj, "platform_profile"):
             hq = Organization.objects.filter(pk="t4f-hq").first()
             PlatformProfile.objects.create(
                 user=obj,

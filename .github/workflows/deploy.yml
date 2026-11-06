@@ -119,6 +119,9 @@ jobs:
 
       - name: Execute Remote Deployment via SSH
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          TARGET_OVERRIDE: ${{ vars.DEPLOY_PATH }}
+          USER_PASS: ${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }}
         with:
           host: ${{ secrets.VPS_HOST || vars.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME || vars.VPS_USERNAME }}
@@ -126,8 +129,10 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY || vars.VPS_SSH_KEY }}
           port: ${{ vars.VPS_PORT || 22 }}
           request_pty: true
+          debug: true
           script_stop: true
           command_timeout: 30m
+          envs: TARGET_OVERRIDE,USER_PASS
           script: |
             set -e
 
@@ -137,14 +142,16 @@ jobs:
                 "$@"
               elif sudo -n true 2>/dev/null; then
                 sudo "$@"
+              elif [ -n "$USER_PASS" ]; then
+                echo "$USER_PASS" | sudo -S -p '' "$@"
               else
-                echo "${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }}" | sudo -S -p '' "$@"
+                sudo "$@"
               fi
             }
 
             # Determine Target Directory
-            if [ -n "${{ vars.DEPLOY_PATH }}" ]; then
-              TARGET_DIR="${{ vars.DEPLOY_PATH }}"
+            if [ -n "$TARGET_OVERRIDE" ]; then
+              TARGET_DIR="$TARGET_OVERRIDE"
             elif [ "$(id -u)" -eq 0 ]; then
               TARGET_DIR="/var/www/portal.t4f-global.org"
             else

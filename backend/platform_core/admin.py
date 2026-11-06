@@ -256,13 +256,13 @@ class CustomUserAdmin(BaseUserAdmin):
         profile = getattr(obj, "platform_profile", None)
         role = profile.system_role if profile else ("platform_super_admin" if obj.is_superuser else "standard_user")
         role_map = {
-            "platform_super_admin": ("badge-primary", "fas fa-shield-alt", "Platform Super Admin"),
+            "platform_super_admin": ("badge-primary bg-primary", "fas fa-shield-alt", "Platform Super Admin"),
             "high_super_admin": ("badge-purple", "fas fa-crown", "High Super Admin"),
-            "country_super_admin": ("badge-info", "fas fa-globe-africa", "Country Super Admin"),
+            "country_super_admin": ("badge-info bg-info", "fas fa-globe-africa", "Country Super Admin"),
             "country_it_admin": ("badge-teal", "fas fa-user-cog", "Country IT Admin"),
-            "standard_user": ("badge-secondary", "fas fa-user", "Standard User"),
+            "standard_user": ("badge-secondary bg-secondary", "fas fa-user", "Standard User"),
         }
-        badge_class, icon, label = role_map.get(role, ("badge-secondary", "fas fa-user", role.replace("_", " ").title()))
+        badge_class, icon, label = role_map.get(role, ("badge-secondary bg-secondary", "fas fa-user", role.replace("_", " ").title()))
         return format_html('<span class="badge {}"><i class="{} mr-1"></i>{}</span>', badge_class, icon, label)
 
     @admin.display(description="Status", ordering="platform_profile__status")
@@ -270,18 +270,18 @@ class CustomUserAdmin(BaseUserAdmin):
         profile = getattr(obj, "platform_profile", None)
         status = profile.status if profile else ("Active" if obj.is_active else "Inactive")
         if status == "Active":
-            return mark_safe('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Active</span>')
+            return mark_safe('<span class="badge badge-success bg-success"><i class="fas fa-check-circle mr-1"></i>Active</span>')
         elif status == "Suspended":
-            return mark_safe('<span class="badge badge-warning text-dark"><i class="fas fa-pause-circle mr-1"></i>Suspended</span>')
-        return mark_safe('<span class="badge badge-danger"><i class="fas fa-times-circle mr-1"></i>Inactive</span>')
+            return mark_safe('<span class="badge badge-warning bg-warning text-dark"><i class="fas fa-pause-circle mr-1"></i>Suspended</span>')
+        return mark_safe('<span class="badge badge-danger bg-danger"><i class="fas fa-times-circle mr-1"></i>Inactive</span>')
 
     @admin.display(description="Access Tier")
     def get_staff_badge(self, obj):
         if obj.is_superuser:
-            return mark_safe('<span class="badge badge-danger"><i class="fas fa-user-shield mr-1"></i>Superuser</span>')
+            return mark_safe('<span class="badge badge-danger bg-danger"><i class="fas fa-user-shield mr-1"></i>Superuser</span>')
         elif obj.is_staff:
-            return mark_safe('<span class="badge badge-primary"><i class="fas fa-user-tie mr-1"></i>Staff Admin</span>')
-        return mark_safe('<span class="badge badge-light border text-muted">Portal User</span>')
+            return mark_safe('<span class="badge badge-primary bg-primary"><i class="fas fa-user-tie mr-1"></i>Staff Admin</span>')
+        return mark_safe('<span class="badge badge-light bg-light text-dark border"><i class="fas fa-user mr-1"></i>Portal User</span>')
 
     @admin.action(description="Activate selected users")
     def activate_users(self, request, queryset):
@@ -361,25 +361,25 @@ class OrganizationAdmin(admin.ModelAdmin):
     def get_type_badge(self, obj):
         t = obj.organization_type or "general"
         if t == "global_hq":
-            return mark_safe('<span class="badge badge-primary"><i class="fas fa-landmark mr-1"></i>Global HQ</span>')
+            return mark_safe('<span class="badge badge-primary bg-primary"><i class="fas fa-landmark mr-1"></i>Global HQ</span>')
         elif t == "country_office":
-            return mark_safe('<span class="badge badge-success"><i class="fas fa-globe-africa mr-1"></i>Country Office</span>')
+            return mark_safe('<span class="badge badge-success bg-success"><i class="fas fa-globe-africa mr-1"></i>Country Office</span>')
         elif t == "external_partner":
-            return mark_safe('<span class="badge badge-info"><i class="fas fa-handshake mr-1"></i>Partner</span>')
+            return mark_safe('<span class="badge badge-info bg-info"><i class="fas fa-handshake mr-1"></i>Partner</span>')
         elif t == "fiscal_sponsor":
-            return mark_safe('<span class="badge badge-warning text-dark"><i class="fas fa-donate mr-1"></i>Fiscal Sponsor</span>')
-        return format_html('<span class="badge badge-secondary">{}</span>', t.replace("_", " ").title())
+            return mark_safe('<span class="badge badge-warning bg-warning text-dark"><i class="fas fa-donate mr-1"></i>Fiscal Sponsor</span>')
+        return format_html('<span class="badge badge-secondary bg-secondary">{}</span>', t.replace("_", " ").title())
 
     @admin.display(description="Status", ordering="status")
     def get_status_badge(self, obj):
         if obj.status == "Active":
-            return mark_safe('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Active</span>')
-        return mark_safe('<span class="badge badge-danger"><i class="fas fa-times-circle mr-1"></i>Inactive</span>')
+            return mark_safe('<span class="badge badge-success bg-success"><i class="fas fa-check-circle mr-1"></i>Active</span>')
+        return mark_safe('<span class="badge badge-danger bg-danger"><i class="fas fa-times-circle mr-1"></i>Inactive</span>')
 
     @admin.display(description="Assigned Staff")
     def get_user_count(self, obj):
         count = obj.profiles.count()
-        return format_html('<span class="badge badge-light border font-weight-bold"><i class="fas fa-users mr-1"></i>{} staff</span>', count)
+        return format_html('<span class="badge badge-light bg-light text-dark border font-weight-bold"><i class="fas fa-users mr-1"></i>{} staff</span>', count)
 
 
 @admin.register(Position)
@@ -407,18 +407,18 @@ class PositionAdmin(admin.ModelAdmin):
     def get_family_badge(self, obj):
         fam = obj.family or "general"
         fam_colors = {
-            "global_management": "badge-primary",
-            "country_leadership": "badge-success",
-            "global_employee": "badge-info",
-            "volunteer": "badge-warning",
+            "global_management": "badge-primary bg-primary",
+            "country_leadership": "badge-success bg-success",
+            "global_employee": "badge-info bg-info",
+            "volunteer": "badge-warning bg-warning text-dark",
         }
-        color = fam_colors.get(fam, "badge-secondary")
+        color = fam_colors.get(fam, "badge-secondary bg-secondary")
         return format_html('<span class="badge {}">{}</span>', color, fam.replace("_", " ").title())
 
     @admin.display(description="Holders")
     def get_holders_count(self, obj):
         count = obj.profiles.count()
-        return format_html('<span class="badge badge-light border">{}</span>', count)
+        return format_html('<span class="badge badge-light bg-light text-dark border font-weight-bold"><i class="fas fa-user-check mr-1"></i>{}</span>', count)
 
 
 @admin.register(PlatformProfile)
@@ -444,22 +444,22 @@ class PlatformProfileAdmin(admin.ModelAdmin):
     @admin.display(description="Role", ordering="system_role")
     def get_role_badge(self, obj):
         role_map = {
-            "platform_super_admin": ("badge-primary", "Platform Super Admin"),
+            "platform_super_admin": ("badge-primary bg-primary", "Platform Super Admin"),
             "high_super_admin": ("badge-purple", "High Super Admin"),
-            "country_super_admin": ("badge-info", "Country Super Admin"),
+            "country_super_admin": ("badge-info bg-info", "Country Super Admin"),
             "country_it_admin": ("badge-teal", "Country IT Admin"),
-            "standard_user": ("badge-secondary", "Standard User"),
+            "standard_user": ("badge-secondary bg-secondary", "Standard User"),
         }
-        badge_class, label = role_map.get(obj.system_role, ("badge-secondary", obj.system_role.replace("_", " ").title()))
+        badge_class, label = role_map.get(obj.system_role, ("badge-secondary bg-secondary", obj.system_role.replace("_", " ").title()))
         return format_html('<span class="badge {}">{}</span>', badge_class, label)
 
     @admin.display(description="Status", ordering="status")
     def get_status_badge(self, obj):
         if obj.status == "Active":
-            return mark_safe('<span class="badge badge-success">Active</span>')
+            return mark_safe('<span class="badge badge-success bg-success"><i class="fas fa-check-circle mr-1"></i>Active</span>')
         elif obj.status == "Suspended":
-            return mark_safe('<span class="badge badge-warning text-dark">Suspended</span>')
-        return mark_safe('<span class="badge badge-danger">Inactive</span>')
+            return mark_safe('<span class="badge badge-warning bg-warning text-dark"><i class="fas fa-pause-circle mr-1"></i>Suspended</span>')
+        return mark_safe('<span class="badge badge-danger bg-danger"><i class="fas fa-times-circle mr-1"></i>Inactive</span>')
 
 
 @admin.register(PlatformRecord)
@@ -473,23 +473,23 @@ class PlatformRecordAdmin(admin.ModelAdmin):
     def get_type_badge(self, obj):
         t = obj.record_type or "general"
         type_colors = {
-            "projects": "badge-primary",
-            "reports": "badge-success",
-            "finance": "badge-info",
+            "projects": "badge-primary bg-primary",
+            "reports": "badge-success bg-success",
+            "finance": "badge-info bg-info",
             "documents": "badge-purple",
             "grants": "badge-teal",
         }
-        color = type_colors.get(t, "badge-secondary")
+        color = type_colors.get(t, "badge-secondary bg-secondary")
         return format_html('<span class="badge {}">{}</span>', color, t.title())
 
     @admin.display(description="Status", ordering="status")
     def get_status_badge(self, obj):
         s = obj.status or "Active"
         if s.lower() in {"active", "approved", "published"}:
-            return format_html('<span class="badge badge-success">{}</span>', s)
+            return format_html('<span class="badge badge-success bg-success"><i class="fas fa-check-circle mr-1"></i>{}</span>', s)
         elif s.lower() in {"draft", "pending", "submitted"}:
-            return format_html('<span class="badge badge-warning text-dark">{}</span>', s)
-        return format_html('<span class="badge badge-secondary">{}</span>', s)
+            return format_html('<span class="badge badge-warning bg-warning text-dark"><i class="fas fa-edit mr-1"></i>{}</span>', s)
+        return format_html('<span class="badge badge-secondary bg-secondary">{}</span>', s)
 
 
 @admin.register(AuditEvent)
@@ -505,14 +505,14 @@ class AuditEventAdmin(admin.ModelAdmin):
     def get_action_badge(self, obj):
         act = obj.action or ""
         if "sign" in act.lower() or "login" in act.lower():
-            return format_html('<span class="badge badge-info"><i class="fas fa-sign-in-alt mr-1"></i>{}</span>', act)
+            return format_html('<span class="badge badge-info bg-info"><i class="fas fa-sign-in-alt mr-1"></i>{}</span>', act)
         elif "create" in act.lower() or "init" in act.lower() or "add" in act.lower():
-            return format_html('<span class="badge badge-success"><i class="fas fa-plus-circle mr-1"></i>{}</span>', act)
+            return format_html('<span class="badge badge-success bg-success"><i class="fas fa-plus-circle mr-1"></i>{}</span>', act)
         elif "update" in act.lower() or "change" in act.lower():
-            return format_html('<span class="badge badge-warning text-dark"><i class="fas fa-edit mr-1"></i>{}</span>', act)
+            return format_html('<span class="badge badge-warning bg-warning text-dark"><i class="fas fa-edit mr-1"></i>{}</span>', act)
         elif "delete" in act.lower() or "remove" in act.lower():
-            return format_html('<span class="badge badge-danger"><i class="fas fa-trash mr-1"></i>{}</span>', act)
-        return format_html('<span class="badge badge-secondary">{}</span>', act)
+            return format_html('<span class="badge badge-danger bg-danger"><i class="fas fa-trash mr-1"></i>{}</span>', act)
+        return format_html('<span class="badge badge-secondary bg-secondary">{}</span>', act)
 
 
 @admin.register(ApiSession)
@@ -527,10 +527,10 @@ class ApiSessionAdmin(admin.ModelAdmin):
     @admin.display(description="Status")
     def get_session_status(self, obj):
         if obj.revoked_at:
-            return mark_safe('<span class="badge badge-danger"><i class="fas fa-ban mr-1"></i>Revoked</span>')
+            return mark_safe('<span class="badge badge-danger bg-danger"><i class="fas fa-ban mr-1"></i>Revoked</span>')
         elif obj.expires_at and obj.expires_at < timezone.now():
-            return mark_safe('<span class="badge badge-secondary"><i class="fas fa-history mr-1"></i>Expired</span>')
-        return mark_safe('<span class="badge badge-success"><i class="fas fa-key mr-1"></i>Active</span>')
+            return mark_safe('<span class="badge badge-secondary bg-secondary"><i class="fas fa-history mr-1"></i>Expired</span>')
+        return mark_safe('<span class="badge badge-success bg-success"><i class="fas fa-key mr-1"></i>Active</span>')
 
     @admin.action(description="Revoke selected API sessions immediately")
     def revoke_sessions(self, request, queryset):
@@ -547,7 +547,7 @@ class FileObjectAdmin(admin.ModelAdmin):
 
     @admin.display(description="Category", ordering="category")
     def get_category_badge(self, obj):
-        return format_html('<span class="badge badge-info"><i class="fas fa-file mr-1"></i>{}</span>', (obj.category or "file").title())
+        return format_html('<span class="badge badge-info bg-info"><i class="fas fa-file mr-1"></i>{}</span>', (obj.category or "file").title())
 
     @admin.display(description="Size", ordering="size_bytes")
     def get_formatted_size(self, obj):
@@ -564,10 +564,10 @@ class InvitationAdmin(admin.ModelAdmin):
     @admin.display(description="Status")
     def get_status_badge(self, obj):
         if obj.accepted_at:
-            return mark_safe('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Accepted</span>')
+            return mark_safe('<span class="badge badge-success bg-success"><i class="fas fa-check-circle mr-1"></i>Accepted</span>')
         elif obj.expires_at and obj.expires_at < timezone.now():
-            return mark_safe('<span class="badge badge-secondary"><i class="fas fa-clock mr-1"></i>Expired</span>')
-        return mark_safe('<span class="badge badge-warning text-dark"><i class="fas fa-envelope mr-1"></i>Pending</span>')
+            return mark_safe('<span class="badge badge-secondary bg-secondary"><i class="fas fa-clock mr-1"></i>Expired</span>')
+        return mark_safe('<span class="badge badge-warning bg-warning text-dark"><i class="fas fa-envelope mr-1"></i>Pending</span>')
 
 
 @admin.register(WorkspaceState)
@@ -577,4 +577,4 @@ class WorkspaceStateAdmin(admin.ModelAdmin):
 
     @admin.display(description="Revision", ordering="revision")
     def get_revision_badge(self, obj):
-        return format_html('<span class="badge badge-primary font-weight-bold">v{}</span>', obj.revision)
+        return format_html('<span class="badge badge-primary bg-primary font-weight-bold">v{}</span>', obj.revision)

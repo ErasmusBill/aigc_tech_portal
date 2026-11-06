@@ -1,98 +1,259 @@
 /* ==============================================================================
    Tech4Future-Global Administration Console Custom Styling
+   Executive Modern Design & Contrast Hardening
    ============================================================================== */
 
 :root {
-  --t4f-navy-900: #0b1f3a;
+  --t4f-navy-950: #061325;
+  --t4f-navy-900: #0c1e36;
   --t4f-navy-800: #122b4d;
   --t4f-navy-700: #1a3c68;
-  --t4f-navy-600: #25528c;
-  --t4f-blue-500: #1877f2;
-  --t4f-teal-500: #0ea5e9;
-  --t4f-emerald-500: #10b981;
+  --t4f-blue-600: #1877f2;
+  --t4f-blue-500: #2563eb;
+  --t4f-cyan-400: #38bdf8;
+  --t4f-emerald-600: #059669;
   --t4f-amber-500: #f59e0b;
-  --t4f-rose-500: #ef4444;
+  --t4f-rose-600: #dc2626;
 }
 
-/* Brand logo & Header */
+/* ==============================================================================
+   Sidebar Custom Styling (Tech4Future Brand Deep Navy Theme)
+   ============================================================================== */
+.main-sidebar,
+aside.main-sidebar,
+.sidebar-dark-navy,
+.sidebar-dark-primary {
+  background: linear-gradient(180deg, #07172c 0%, #0c2340 45%, #102d53 100%) !important;
+  box-shadow: 3px 0 16px rgba(0, 0, 0, 0.28) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
 .brand-link {
   display: flex !important;
   align-items: center !important;
-  padding: 0.85rem 1rem !important;
+  padding: 0.9rem 1rem !important;
+  background: #051222 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .brand-link .brand-image {
   max-height: 38px !important;
   width: 38px !important;
   height: 38px !important;
-  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  border: 2px solid rgba(255, 255, 255, 0.5) !important;
   margin-right: 0.75rem !important;
   object-fit: cover !important;
 }
 
-.brand-text {
+.brand-link .brand-text {
   font-weight: 700 !important;
   font-size: 1.05rem !important;
   letter-spacing: -0.2px !important;
+  color: #ffffff !important;
 }
 
-/* Badges across all list views */
-.badge {
-  font-size: 0.78rem !important;
+.sidebar {
+  padding-top: 0.5rem !important;
+}
+
+.sidebar .user-panel {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 0.85rem 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.sidebar .user-panel .info a {
+  color: #f1f5f9 !important;
   font-weight: 600 !important;
-  padding: 0.35em 0.75em !important;
+  letter-spacing: 0.2px !important;
+}
+
+.nav-sidebar .nav-header {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+  color: #38bdf8 !important; /* Sky blue section headers */
+  padding: 1rem 1rem 0.35rem !important;
+  text-transform: uppercase !important;
+}
+
+.nav-sidebar .nav-item > .nav-link {
+  border-radius: 8px !important;
+  margin: 3px 0.5rem !important;
+  padding: 0.55rem 0.85rem !important;
+  font-weight: 500 !important;
+  font-size: 0.88rem !important;
+  color: #cbd5e1 !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.nav-sidebar .nav-item > .nav-link i.nav-icon {
+  color: #94a3b8 !important;
+  font-size: 0.95rem !important;
+  margin-right: 0.65rem !important;
+  transition: color 0.15s ease-in-out !important;
+}
+
+.nav-sidebar .nav-item > .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.09) !important;
+  color: #ffffff !important;
+}
+
+.nav-sidebar .nav-item > .nav-link:hover i.nav-icon {
+  color: #38bdf8 !important;
+}
+
+.nav-sidebar .nav-item > .nav-link.active {
+  background: linear-gradient(135deg, #1877f2 0%, #0284c7 100%) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(24, 119, 242, 0.4) !important;
+}
+
+.nav-sidebar .nav-item > .nav-link.active i.nav-icon {
+  color: #ffffff !important;
+}
+
+/* ==============================================================================
+   BADGES (Bootstrap 4 & 5 Full Compatibility & High Contrast)
+   ============================================================================== */
+.badge {
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  padding: 0.4em 0.85em !important;
   border-radius: 6px !important;
   letter-spacing: 0.2px !important;
   display: inline-flex !important;
   align-items: center !important;
-  line-height: 1.2 !important;
+  line-height: 1.25 !important;
+  text-shadow: none !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
 }
 
 .badge i {
-  font-size: 0.82em;
+  font-size: 0.85em !important;
+  margin-right: 0.35rem !important;
 }
 
-.badge-purple {
+/* Success Badges (Active, Completed, Published) */
+.badge-success,
+.badge.bg-success,
+span.badge-success {
+  background-color: #059669 !important; /* Rich emerald */
+  color: #ffffff !important;
+  border: 1px solid #047857 !important;
+}
+
+/* Danger Badges (Inactive, Superuser, Revoked) */
+.badge-danger,
+.badge.bg-danger,
+span.badge-danger {
+  background-color: #dc2626 !important; /* Coral red */
+  color: #ffffff !important;
+  border: 1px solid #b91c1c !important;
+}
+
+/* Warning Badges (Suspended, Pending, Fiscal Sponsor) */
+.badge-warning,
+.badge.bg-warning,
+span.badge-warning {
+  background-color: #f59e0b !important; /* Amber */
+  color: #0f172a !important; /* Dark text for contrast */
+  border: 1px solid #d97706 !important;
+}
+
+/* Primary Badges (Staff Admin, Global HQ, Global Management) */
+.badge-primary,
+.badge.bg-primary,
+span.badge-primary {
+  background-color: #2563eb !important; /* Royal Blue */
+  color: #ffffff !important;
+  border: 1px solid #1d4ed8 !important;
+}
+
+/* Info Badges (Partner, Technology, Sessions) */
+.badge-info,
+.badge.bg-info,
+span.badge-info {
+  background-color: #0284c7 !important; /* Ocean blue */
+  color: #ffffff !important;
+  border: 1px solid #0369a1 !important;
+}
+
+/* Secondary Badges (Standard User, Archives) */
+.badge-secondary,
+.badge.bg-secondary,
+span.badge-secondary {
+  background-color: #64748b !important; /* Slate */
+  color: #ffffff !important;
+  border: 1px solid #475569 !important;
+}
+
+/* Custom Palette Badges */
+.badge-purple,
+span.badge-purple {
   background-color: #7c3aed !important;
   color: #ffffff !important;
+  border: 1px solid #6d28d9 !important;
 }
 
-.badge-indigo {
+.badge-indigo,
+span.badge-indigo {
   background-color: #4f46e5 !important;
   color: #ffffff !important;
+  border: 1px solid #4338ca !important;
 }
 
-.badge-teal {
+.badge-teal,
+span.badge-teal {
   background-color: #0d9488 !important;
   color: #ffffff !important;
+  border: 1px solid #0f766e !important;
 }
 
-/* Tables & Lists */
+/* Light / Pill Badges (Assigned Staff, Holders, Portal User) */
+.badge-light,
+.badge.bg-light,
+span.badge-light {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important; /* Dark text - visible on light background */
+  border: 1px solid #cbd5e1 !important;
+}
+
+.badge-light i,
+.badge.bg-light i {
+  color: #2563eb !important; /* Blue icon inside staff badge */
+}
+
+/* ==============================================================================
+   Tables & Lists
+   ============================================================================== */
 .table thead th {
   border-top: none !important;
-  border-bottom: 2px solid #e2e8f0 !important;
+  border-bottom: 2px solid #cbd5e1 !important;
   background-color: #f8fafc !important;
-  color: #475569 !important;
+  color: #334155 !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
-  font-size: 0.72rem !important;
+  font-size: 0.74rem !important;
   letter-spacing: 0.6px !important;
-  padding: 0.75rem 1rem !important;
+  padding: 0.85rem 1rem !important;
 }
 
 .table tbody td {
   padding: 0.85rem 1rem !important;
   vertical-align: middle !important;
   border-top: 1px solid #f1f5f9 !important;
+  color: #1e293b;
 }
 
 .table-hover tbody tr:hover {
-  background-color: rgba(30, 58, 138, 0.03) !important;
+  background-color: rgba(37, 99, 235, 0.04) !important;
 }
 
 /* Card styling */
 .card {
-  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
   border-radius: 10px !important;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
   overflow: hidden;
@@ -162,23 +323,6 @@ fieldset.module h2 {
   font-size: 0.85rem !important;
 }
 
-/* Sidebar nav */
-.nav-sidebar .nav-item > .nav-link {
-  border-radius: 6px !important;
-  margin-bottom: 2px !important;
-  font-weight: 500 !important;
-  font-size: 0.88rem !important;
-}
-
-.nav-sidebar .nav-header {
-  font-size: 0.72rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.8px !important;
-  color: #94a3b8 !important;
-  padding: 0.75rem 1rem 0.25rem !important;
-  text-transform: uppercase !important;
-}
-
 /* Clickable admin model titles */
 a.model-title-link {
   font-weight: 600;
@@ -189,4 +333,3 @@ a.model-title-link:hover {
   color: #2563eb;
   text-decoration: underline;
 }
-

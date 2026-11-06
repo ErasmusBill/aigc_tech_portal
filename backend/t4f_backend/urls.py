@@ -3,6 +3,7 @@ from django.urls import path, re_path
 from platform_core import views
 
 urlpatterns = [
+    path("admin/", admin.site.urls),
     path("django-admin/", admin.site.urls),
     path("", views.frontend_index, name="frontend-index"),
     path("styles.css", views.frontend_file, {"relative_path": "styles.css"}),

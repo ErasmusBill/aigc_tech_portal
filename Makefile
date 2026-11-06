@@ -83,6 +83,9 @@ prod-migrate: ## Run database migrations in production container
 prod-seed: ## Seed all user roles in production container
 	docker compose -f docker-compose.prod.yml exec -T web python manage.py seed_all_users
 
+prod-superuser: ## Create an interactive superuser in production container
+	docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
+
 prod-collectstatic: ## Collect static files in production container
 	docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
 

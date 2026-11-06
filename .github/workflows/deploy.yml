@@ -228,6 +228,13 @@ jobs:
             echo "==> Setting up Host Nginx configuration..."
             NGINX_CONF="$TARGET_DIR/docker/nginx/host-nginx-portal.t4f-global.org.conf"
 
+            # Stop any competing web servers on port 80/443 (e.g. default apache2)
+            if systemctl is-active --quiet apache2 2>/dev/null; then
+              echo "==> Stopping competing apache2 service on port 80..."
+              run_sudo systemctl stop apache2
+              run_sudo systemctl disable apache2
+            fi
+
             # Locate Nginx binary across system paths
             NGINX_BIN=""
             for p in $(which nginx 2>/dev/null) /usr/sbin/nginx /usr/local/sbin/nginx /usr/bin/nginx; do
@@ -268,10 +275,11 @@ jobs:
                 run_sudo cp "$NGINX_CONF" /etc/nginx/conf.d/portal.t4f-global.org.conf
               fi
 
-              # Validate and reload Nginx
+              # Validate and restart Nginx
               if run_sudo "$NGINX_BIN" -t; then
-                echo "==> Nginx test passed. Reloading Nginx service..."
-                run_sudo systemctl reload nginx 2>/dev/null || run_sudo service nginx reload 2>/dev/null || run_sudo "$NGINX_BIN" -s reload || true
+                echo "==> Nginx test passed. Restarting Nginx service..."
+                run_sudo systemctl enable nginx 2>/dev/null || true
+                run_sudo systemctl restart nginx 2>/dev/null || run_sudo service nginx restart 2>/dev/null || run_sudo "$NGINX_BIN" -s reload || true
 
                 # Automatic Let's Encrypt SSL via Certbot
                 CERTBOT_BIN=""
@@ -283,8 +291,9 @@ jobs:
                 done
 
                 if [ -n "$CERTBOT_BIN" ]; then
-                  echo "==> Provisioning / verifying Let's Encrypt SSL certificate for portal.t4f-global.org..."
+                  echo "==> Provisioning Let's Encrypt SSL certificate for portal.t4f-global.org..."
                   run_sudo "$CERTBOT_BIN" --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect --keep-until-expiring || echo "::warning::Certbot encountered an error during certificate issuance"
+                  run_sudo systemctl reload nginx 2>/dev/null || run_sudo "$NGINX_BIN" -s reload || true
                 else
                   echo "==> [Notice] Certbot binary not found in standard paths."
                 fi
@@ -292,6 +301,10 @@ jobs:
                 echo "::warning::Nginx configuration test failed, skipping reload to prevent downtime."
               fi
             fi
+
+            # Verify local reverse proxy routing
+            echo "==> Verifying local Nginx proxy routing to port 8080..."
+            curl -Iv http://127.0.0.1 -H "Host: portal.t4f-global.org" || true
 
             # Health Check (Retry loop)
             echo "==> Checking application health on port 8080..."

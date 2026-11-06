@@ -5,6 +5,7 @@ PYTHON ?= .venv/bin/python
 UVICORN ?= .venv/bin/uvicorn
 PYTEST ?= .venv/bin/pytest
 PORT ?= 8080
+DB_ENGINE ?= postgresql
 
 help: ## Show this help message
 	@echo "Usage: make [target]"
@@ -16,23 +17,23 @@ install: ## Set up Python 3.13 venv and install dependencies using uv
 	uv venv --python 3.13
 	uv pip install -r backend/requirements-dev.txt
 
-migrate: ## Run Django migrations locally (SQLite mode)
-	DB_ENGINE=sqlite $(PYTHON) backend/manage.py migrate
+migrate: ## Run Django database migrations (PostgreSQL default)
+	DB_ENGINE=$(DB_ENGINE) $(PYTHON) backend/manage.py migrate
 
-bootstrap: ## Seed organizations, positions, and initial admin (SQLite mode)
-	DB_ENGINE=sqlite $(PYTHON) backend/manage.py bootstrap_platform
+bootstrap: ## Seed organizations, positions, and initial admin
+	DB_ENGINE=$(DB_ENGINE) $(PYTHON) backend/manage.py bootstrap_platform
 
-seed-users: ## Seed full suite of user roles and credentials (SQLite mode)
-	DB_ENGINE=sqlite $(PYTHON) backend/manage.py seed_all_users
+seed-users: ## Seed full suite of user roles and credentials
+	DB_ENGINE=$(DB_ENGINE) $(PYTHON) backend/manage.py seed_all_users
 
-dev: ## Run local development server on http://localhost:$(PORT)
-	DB_ENGINE=sqlite PYTHONPATH=backend $(UVICORN) t4f_backend.asgi:application --host 0.0.0.0 --port $(PORT) --reload
+dev: ## Run local development server with PostgreSQL on http://localhost:$(PORT)
+	DB_ENGINE=$(DB_ENGINE) PYTHONPATH=backend $(UVICORN) t4f_backend.asgi:application --host 0.0.0.0 --port $(PORT) --reload
 
 test: ## Run unit and integration tests with pytest
 	$(PYTEST) backend/tests
 
 check: ## Run Django system checks
-	DB_ENGINE=sqlite $(PYTHON) backend/manage.py check
+	DB_ENGINE=$(DB_ENGINE) $(PYTHON) backend/manage.py check
 
 # --- Database in Docker ---
 db-build: ## Build the custom PostgreSQL 17 production Docker image

@@ -53,14 +53,7 @@ WSGI_APPLICATION = "t4f_backend.wsgi.application"
 ASGI_APPLICATION = "t4f_backend.asgi.application"
 
 # Database Configuration
-is_testing = (
-    "pytest" in sys.argv[0]
-    or "pytest" in sys.modules
-    or bool(os.getenv("PYTEST_CURRENT_TEST"))
-    or "test" in sys.argv
-)
-default_db_engine = "sqlite" if is_testing else "postgresql"
-DB_ENGINE = os.getenv("DB_ENGINE", default_db_engine)
+DB_ENGINE = os.getenv("DB_ENGINE", "postgresql").lower()
 
 if DB_ENGINE == "sqlite":
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}

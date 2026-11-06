@@ -63,11 +63,26 @@ WEB_PORT=8080
 HTTP_PORT=80
 HTTPS_PORT=443
 PORT=8080
-DB_ENGINE=sqlite
+
+# PostgreSQL is used in both development and production
+DB_ENGINE=postgresql
+POSTGRES_DB=t4f_global
+POSTGRES_USER=t4f_app
+POSTGRES_PASSWORD=TestSecretPass@2027#Secure
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
 ```
 
-To run the local testing server:
+To run PostgreSQL in development (Docker):
 ```bash
+make db-up
+# Starts PostgreSQL 17 on localhost:5432 and Redis
+```
+
+To run migrations and local dev server with PostgreSQL:
+```bash
+make migrate
+make seed-users
 make dev
 # Server starts on http://localhost:8080
 ```

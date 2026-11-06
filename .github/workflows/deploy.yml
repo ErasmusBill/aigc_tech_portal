@@ -15,8 +15,23 @@ jobs:
   # 1. CI / Test Quality Gate
   # ============================================================================
   test:
-    name: Run Unit & Integration Tests
+    name: Run Unit & Integration Tests (PostgreSQL 17)
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: t4f_global
+          POSTGRES_USER: t4f_app
+          POSTGRES_PASSWORD: ci_postgres_password_2027
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout Code
@@ -34,17 +49,27 @@ jobs:
           pip install -r backend/requirements.txt
           pip install -r backend/requirements-dev.txt
 
-      - name: Run Django System Check
+      - name: Run Django System Check (PostgreSQL)
         env:
-          DB_ENGINE: sqlite
+          DB_ENGINE: postgresql
+          POSTGRES_DB: t4f_global
+          POSTGRES_USER: t4f_app
+          POSTGRES_PASSWORD: ci_postgres_password_2027
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: 5432
           DJANGO_SECRET_KEY: ci-test-secret-key-at-least-fifty-characters-long-2027
           DJANGO_DEBUG: "false"
         run: |
           python backend/manage.py check
 
-      - name: Execute Pytest Suite
+      - name: Execute Pytest Suite (PostgreSQL)
         env:
-          DB_ENGINE: sqlite
+          DB_ENGINE: postgresql
+          POSTGRES_DB: t4f_global
+          POSTGRES_USER: t4f_app
+          POSTGRES_PASSWORD: ci_postgres_password_2027
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: 5432
           DJANGO_SECRET_KEY: ci-test-secret-key-at-least-fifty-characters-long-2027
           DJANGO_DEBUG: "false"
         run: |

@@ -96,7 +96,8 @@ Navigate to your repository on GitHub: **Settings > Secrets and variables > Acti
 |---|---|---|
 | `VPS_HOST` | VPS IP address or domain | `187.7.19.226` or your VPS IP |
 | `VPS_USERNAME` | SSH user on your VPS | `root`, `erasmus`, or `sbpafrica` |
-| `VPS_SSH_KEY` | Private SSH key with VPS access | Contents of your `~/.ssh/id_rsa` or private key |
+| `VPS_PASSWORD` | SSH password for your VPS user (since you use password auth) | Your VPS user login password |
+| `VPS_SSH_KEY` | *(Optional)* SSH Private Key (leave empty if using password) | Private SSH key if ever switched |
 
 ### ⚙️ GitHub Actions Variables to Configure (Optional):
 Under **Settings > Secrets and variables > Actions > Variables tab > New repository variable**:
@@ -122,3 +123,4 @@ Under **Settings > Secrets and variables > Actions > Variables tab > New reposit
 | `make prod-migrate` | Runs database migrations in the production container |
 | `make prod-seed` | Seeds user accounts in the production container |
 | `make prod-logs` | Follows production container logs |
+

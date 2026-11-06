@@ -51,7 +51,7 @@ jobs:
           pytest backend/tests
 
   # ============================================================================
-  # 2. CD / Automated VPS Deployment
+  # 2. CD / Automated VPS Deployment (Supports Password & SSH Key Authentication)
   # ============================================================================
   deploy:
     name: Deploy to Production VPS (portal.t4f-global.org)
@@ -65,68 +65,78 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ vars.VPS_PORT || 22 }}
-          script_stop: true
-          envs: DEPLOY_DIR
-        env:
-          DEPLOY_DIR: ${{ vars.DEPLOY_PATH || '/var/www/portal.t4f-global.org' }}
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ vars.VPS_PORT || 22 }}
           script_stop: true
           script: |
             TARGET_DIR="${{ vars.DEPLOY_PATH || '/var/www/portal.t4f-global.org' }}"
-            echo "==> Deploying to $TARGET_DIR..."
+            echo "==> Deploying to target directory: $TARGET_DIR..."
 
-            # Ensure deployment target directory exists
-            if [ ! -d "$TARGET_DIR" ]; then
-              echo "Target directory $TARGET_DIR does not exist. Creating and cloning..."
+            # Ensure git is installed
+            if ! command -v git >/dev/null 2>&1; then
+              echo "Error: git is not installed on the VPS."
+              exit 1
+            fi
+
+            # Check if directory exists and has git repo initialized
+            if [ ! -d "$TARGET_DIR/.git" ]; then
+              echo "Repository not initialized in $TARGET_DIR. Cloning via HTTPS..."
               mkdir -p "$TARGET_DIR"
-              git clone git@github.com:${{ github.repository }}.git "$TARGET_DIR"
+              git clone https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git "$TARGET_DIR"
             fi
 
             cd "$TARGET_DIR"
+
+            # Set authenticated HTTPS remote URL using ephemeral GitHub token
+            git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
             # Pull latest changes
             echo "==> Pulling latest changes from origin/main..."
             git fetch origin main
             git reset --hard origin/main
 
+            # Determine docker command (handles both non-root docker and sudo docker)
+            if docker info >/dev/null 2>&1; then
+              DOCKER_COMPOSE="docker compose"
+            elif sudo -n docker info >/dev/null 2>&1; then
+              DOCKER_COMPOSE="sudo docker compose"
+            else
+              DOCKER_COMPOSE="docker compose"
+            fi
+
             # Ensure .env exists
             if [ ! -f .env ]; then
               echo "Notice: .env not found on server. Creating from .env.production.example..."
               cp .env.production.example .env
-              echo "IMPORTANT: Please verify your production secrets inside $TARGET_DIR/.env"
+              echo "IMPORTANT: Verify production database and secret settings in $TARGET_DIR/.env"
             fi
 
             # Build and launch production Docker stack
-            echo "==> Building and launching Docker Compose stack..."
-            docker compose -f docker-compose.prod.yml build
-            docker compose -f docker-compose.prod.yml up -d
+            echo "==> Building and starting Docker Compose containers (Web port 8080)..."
+            $DOCKER_COMPOSE -f docker-compose.prod.yml build
+            $DOCKER_COMPOSE -f docker-compose.prod.yml up -d
 
             # Run database migrations
             echo "==> Executing database migrations..."
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
 
-            # Collect static files
+            # Collect static files for WhiteNoise
             echo "==> Collecting static assets..."
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput || true
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput || true
 
-            # Seed user accounts
+            # Seed / sync platform users
             echo "==> Verifying platform users..."
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py seed_all_users || true
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T web python manage.py seed_all_users || true
 
-            # Verify health status
+            # Verify health status on port 8080
             echo "==> Running system health probe..."
             sleep 5
-            HEALTH_URL="http://127.0.0.1:${WEB_PORT:-8080}/api/v1/system/health"
+            HEALTH_URL="http://127.0.0.1:8080/api/v1/system/health"
             if curl -sf "$HEALTH_URL" > /dev/null; then
               echo "==> [OK] System is healthy and responding at $HEALTH_URL"
             else
-              echo "==> [WARNING] Health probe at $HEALTH_URL did not respond 200 OK. Check docker logs."
+              echo "==> [NOTICE] Container started. If health probe failed, verify docker logs with: $DOCKER_COMPOSE -f docker-compose.prod.yml logs"
             fi
 
             echo "==> Deployment of portal.t4f-global.org completed successfully!"

@@ -228,13 +228,12 @@ jobs:
             echo "==> Setting up Host Nginx configuration..."
             NGINX_CONF="$TARGET_DIR/docker/nginx/host-nginx-portal.t4f-global.org.conf"
 
-            # Stop any competing web servers on port 80/443 (e.g. default apache2)
+            # Stop competing apache2 service if active
             if systemctl is-active --quiet apache2 2>/dev/null; then
               echo "==> Stopping competing apache2 service on port 80..."
               run_sudo systemctl stop apache2 2>/dev/null || true
               run_sudo systemctl disable apache2 2>/dev/null || true
             fi
-            run_sudo pkill -9 -f apache2 2>/dev/null || true
 
             # Locate Nginx binary across system paths
             NGINX_BIN=""
@@ -279,19 +278,10 @@ jobs:
                 run_sudo cp "$NGINX_CONF" /etc/nginx/conf.d/portal.t4f-global.org.conf
               fi
 
-              # Validate configuration before touching processes
+              # Validate configuration before reloading
               if run_sudo "$NGINX_BIN" -t; then
-                echo "==> Nginx syntax test passed. Freeing port 80/443 from any hung orphan processes..."
-                run_sudo fuser -k 80/tcp 443/tcp 2>/dev/null || true
-                run_sudo pkill -9 -f nginx 2>/dev/null || true
-                sleep 1
-
-                echo "==> Starting fresh Nginx service..."
-                run_sudo systemctl reset-failed nginx 2>/dev/null || true
-                run_sudo systemctl unmask nginx 2>/dev/null || true
-                run_sudo systemctl enable nginx 2>/dev/null || true
-                run_sudo systemctl start nginx || run_sudo service nginx start || true
-                run_sudo systemctl status nginx --no-pager || true
+                echo "==> Nginx syntax test passed. Reloading Nginx service gracefully..."
+                run_sudo systemctl reload nginx 2>/dev/null || run_sudo service nginx reload 2>/dev/null || run_sudo systemctl start nginx 2>/dev/null || true
 
                 # Automatic Let's Encrypt SSL via Certbot
                 CERTBOT_BIN=""
@@ -304,13 +294,13 @@ jobs:
 
                 if [ -n "$CERTBOT_BIN" ]; then
                   echo "==> Provisioning Let's Encrypt SSL certificate for portal.t4f-global.org..."
-                  run_sudo "$CERTBOT_BIN" --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect --keep-until-expiring
-                  run_sudo systemctl reload nginx 2>/dev/null || run_sudo systemctl restart nginx || true
+                  run_sudo "$CERTBOT_BIN" --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect --keep-until-expiring || run_sudo "$CERTBOT_BIN" certonly --webroot -w /var/www/html -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --keep-until-expiring || echo "::warning::Certbot encountered an error during certificate issuance"
+                  run_sudo systemctl reload nginx 2>/dev/null || true
                 else
                   echo "==> [Notice] Certbot binary not found in standard paths."
                 fi
               else
-                echo "::warning::Nginx configuration test failed, skipping restart."
+                echo "::warning::Nginx configuration test failed, skipping reload."
               fi
             fi
 

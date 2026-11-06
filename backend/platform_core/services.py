@@ -346,8 +346,8 @@ def provision_invited_user(
 @transaction.atomic
 def change_user_password(user: User, current_password: str, new_password: str) -> dict:
     """Atomically validate and update user password."""
-    if len(new_password) < 8:
-        raise ValueError("The password must be at least 8 characters long.")
+    if not new_password:
+        raise ValueError("New password cannot be empty.")
     profile = getattr(user, "platform_profile", None)
     if not (profile and profile.must_reset):
         if not current_password or not user.check_password(current_password):

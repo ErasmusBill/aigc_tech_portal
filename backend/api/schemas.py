@@ -119,7 +119,7 @@ class ExportRequest(BaseModel):
 
 class PasswordChangeRequest(BaseModel):
     current_password: str = ""
-    new_password: str = Field(min_length=8, max_length=8, description="Password must be only 8 characters long")
+    new_password: str = Field(min_length=1, description="New password")
 
 class RecordIn(BaseModel):
     id: str

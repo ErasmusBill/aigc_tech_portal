@@ -1,0 +1,82 @@
+services:
+  db:
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
+    image: t4f-postgres:17-prod
+    container_name: t4f-postgres-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-t4f_global}
+      POSTGRES_USER: ${POSTGRES_USER:-t4f_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-password}
+    volumes:
+      - t4f_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT_BINDING:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-t4f_app} -d ${POSTGRES_DB:-t4f_global}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: t4f-redis-cache
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "volatile-lru"]
+    volumes:
+      - t4f_redis_data:/data
+    ports:
+      - "${REDIS_PORT_BINDING:-16379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: t4f-platform:v13-prod
+    container_name: t4f-web-platform
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-replace-with-a-long-random-secret-for-production}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,web}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000}
+      DB_ENGINE: postgresql
+      POSTGRES_DB: ${POSTGRES_DB:-t4f_global}
+      POSTGRES_USER: ${POSTGRES_USER:-t4f_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-password}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_SSLMODE: disable
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@t4f-global.org}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-T4FGlobal@2026!}
+      INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-Tech4Future-Global Super Administrator}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      WEB_WORKERS: ${WEB_WORKERS:-4}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-Tech4Future-Global <no-reply@t4f-global.org>}
+    ports:
+      - "${WEB_PORT:-8080}:8000"
+    volumes:
+      - t4f_media_data:/app/backend/media
+
+volumes:
+  t4f_postgres_data:
+  t4f_redis_data:
+  t4f_media_data:

@@ -1,0 +1,31 @@
+﻿Dashboard,Activated Actions,Status
+Executive Dashboard,Open navigation; organization switcher; search; profile actions,Active
+Time Clock & Attendance,Check In; Break Out; Check Back In; Clock Out; GPS/map,Active
+My Project Workspace,Open project; develop/upload document; task; budget; download,Active
+Advanced Reports Center,Create; Save Draft; Edit; Delete eligible draft; Submit; View; Download; Print; Pre-Approve; Approve,Active
+AI Assistance Center,Generate; Edit; Delete draft; Word export; Excel export; auto-save file on close; download/delete AI file,Active
+Organizations,Add; Edit; Delete/archive eligible; email contact; confirmation,Active
+Accounts & Invitations,Create/Invite; Edit; Delete/deactivate; Send Invite; email,Active
+Positions & TOR,Browse/search position/TOR records,Active
+Access & PIN Requests,Request; Pre-Approve; Approve; Deny; PIN; email; download,Active
+Database & Storage,Status; Sync; Restore; Backup; Self-Test,Active
+Country Portals & Leadership Directory,View; edit office; assign/edit/remove/replace Country Director,Active
+Programs & Projects,Create; Open; Edit; Delete eligible draft; Workspace,Active
+Staff Directory,View; Email; Invite where authorized,Active
+Global Board Portal,Add Board member; invite; email; profile/TOR/attendance/report/project/finance access by role,Active
+Advisor Council Portal,Add Advisor; invite; email; profile/TOR/attendance/report/project/finance access by role,Active
+Controlled Policy & Governance Library,Upload; Replace; View; Review; Draft Edit; Pre-Approve; Final Draft; Approve; Publish; PIN download,Active
+Financial Management Center,Create; Edit; Delete Draft; View; Download; Print; approval/posting controls,Active
+Bookkeeping & Ledger,View; manual journal; double-entry source posting,Active
+Budgets,Create; Edit; Delete eligible Draft; Print,Active
+Stakeholders Dashboard,Open stakeholder/income registers; add stakeholder,Active
+Donor Organizations,Create; Edit; CSV import; linked income view,Active
+Sponsors,Create; Edit; CSV import; linked income view,Active
+Supporters,Create; Edit; CSV import; linked income view,Active
+Partners,Create; Edit; CSV import; linked income view,Active
+Donor Income,Create; CSV import; supporting file; view,Active
+Sponsor Income,Create; CSV import; supporting file; view,Active
+Supporter Income,Create; CSV import; supporting file; view,Active
+Partner Income,Create; CSV import; supporting file; view,Active
+Audit Log,View scoped audit records,Active
+My Profile & TOR,View; edit profile; change password,Active

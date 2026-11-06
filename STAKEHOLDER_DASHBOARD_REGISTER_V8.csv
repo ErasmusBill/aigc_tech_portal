@@ -1,0 +1,9 @@
+﻿Dashboard / Register,Internal Type,V8 Record Behavior
+Donor Organizations,donor,Create organization; edit organization; CSV upload; email primary contact; send portal confirmation; linked Donor Income appears below
+Sponsors,regular_sponsor,Create Sponsor; edit; CSV upload; email contact; send confirmation; linked Sponsor Income appears below
+Supporters,supporter,Create Supporter; edit; CSV upload; email contact; send confirmation; linked Supporter Income appears below
+Partners,partner,Create Partner; edit; CSV upload; email contact; send confirmation; linked Partner Income appears below
+Donor Income,donor,Create income record; upload supporting file; CSV import; appears on Donor and Stakeholders dashboards
+Sponsor Income,regular_sponsor,Create income record; upload supporting file; CSV import; appears on Sponsor and Stakeholders dashboards
+Supporter Income,supporter,Create income record; upload supporting file; CSV import; appears on Supporter and Stakeholders dashboards
+Partner Income,partner,Create income record; upload supporting file; CSV import; appears on Partner and Stakeholders dashboards

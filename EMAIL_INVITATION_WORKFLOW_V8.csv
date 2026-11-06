@@ -1,0 +1,6 @@
+﻿Email Workflow,Source Dashboard,Authorized Sender,V8 Behavior
+User / Employee invitation,Create/Invite User form,Super Admin or authorized IT Support,Server SMTP email + logged delivery result; manual email fallback
+Board Member invitation,Global Board Portal Add Board Member,Authorized global governance administrator,Server SMTP invitation; email link; temporary credentials
+Advisor invitation,Advisory Board / Advisory Council Add Advisor,Authorized global governance administrator,Server SMTP invitation; email link; temporary credentials
+Organization confirmation,Organizations / stakeholder add form,Platform Super Admin,Primary contact confirmation email after save
+Resend invitation,Accounts / Staff / Board / Advisor directory,Authorized administrator,Send Invite action without recreating account

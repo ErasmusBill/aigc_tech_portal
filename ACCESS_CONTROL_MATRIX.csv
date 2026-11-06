@@ -1,0 +1,15 @@
+﻿Role / Control Type,Data Scope,Primary Access,Can Add Users,Can Upload Controlled Policy Library,Finance Visibility,Report Visibility,Key Restriction
+Platform Super Administrator,All organizations,All modules,Yes - all organizations,Yes,All countries,All reports,Enterprise control
+HQ High Super Administrator,T4F HQ + country structure,Administration modules,Yes - authorized scope,Yes,All countries,All reports,No automatic fiscal authority
+Country Super Administrator,Own country,Country accounts + operations,Yes - own country,No,Own country; cross-country finance only if position is Country Director/Finance Head,Own country + shared reports,Cannot upload Controlled Policy Library
+Country IT Account Administrator,Own country,Accounts + assigned work modules,Yes - own country,No,No cross-country finance,Own country + shared reports,Cannot create Platform Super Admin
+Global Board,Global,Governance + reports + finance,No,No (except Secretary if authorized HQ controller),Read-only all countries,All authorized reports,"Oversight, not transaction processing"
+Advisory Council,Global,Advisory + reports + finance,No,No,Read-only all countries,All authorized reports,"Advisory, not transaction approval"
+Global C-Level,Global,Executive management,By assigned admin control,Only approved administrative positions,Read all countries,All authorized reports,Finance edit limited to finance roles
+Global Finance Team,Global,Finance + bookkeeping + budgets,No unless separately admin,No unless approved admin position,Create/edit all countries,All authorized reports,Segregation of duties applies
+Country Director,Own country + cross-country read,Country management + finance oversight,If assigned Country Super Admin,No,Own country edit/approval; other countries read-only,Own country + shared reports,Cross-country finance is read-only
+Country Finance & Administration Manager,Own country + cross-country read,Finance + bookkeeping + budgets,No unless assigned admin,No,Own country edit/post; other countries read-only,Own country + shared reports,Head of country finance
+Country Finance Staff,Own country,Finance operational modules,No,No,Own country only,Own country + shared reports,Cannot see other country finance
+Project / Program Team,Own assigned project/country,Project workspace + reports + project budgets,No,No,Project-linked financial visibility,All required reports,Financial control managed by project/finance heads
+Fiscal Sponsor,External sponsor scope,T4F dashboard + reports + 4 income registers,Only own-org accounts if High Super Admin,No,No internal finance operations,Stakeholder-facing reports,No staff/project/policy administration
+Donor / Sponsor / Supporter / Partner,Own external organization,Reports + controlled-doc requests + profile,Only own-org accounts if High Super Admin,No,No internal finance operations,Stakeholder-facing reports,Private external portal

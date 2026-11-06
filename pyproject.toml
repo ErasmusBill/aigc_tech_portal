@@ -1,0 +1,5 @@
+[project]
+name = "2027-t4f-global-management-system-v13"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = []

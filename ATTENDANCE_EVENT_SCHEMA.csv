@@ -1,0 +1,6 @@
+﻿Attendance Event,Required/Supported Detail
+Check In,Timestamp + optional GPS coordinates/accuracy + employee/user ID + organization
+Break Out,Timestamp + optional GPS coordinates/accuracy + active time-entry ID
+Break In,Timestamp + optional GPS coordinates/accuracy + active break ID
+Clock Out,Timestamp + optional GPS coordinates/accuracy + time-entry ID
+Display,Employee profile photo; weekday; full month/date/year; week range; event times; break duration; worked hours; map links

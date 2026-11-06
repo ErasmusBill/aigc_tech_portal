@@ -1,0 +1,8 @@
+﻿Control Area,V7 Detail
+Request identity,Requester profile photo; name; email; position; organization
+Request timestamp,"Full weekday, month, day, year, hour, minute, second; week range"
+Request location,Optional browser GPS latitude/longitude/accuracy captured with user permission; map link
+Access scope,View; Review; Draft Edit; Download PIN
+Decision status,Pending; Pre-Approved; Approved; Denied; Expired/Used where applicable
+Approval evidence,Pre-approver/time; final approver/time; decision notes; audit event
+Download control,Six-digit PIN; expiration; use status; download permission check

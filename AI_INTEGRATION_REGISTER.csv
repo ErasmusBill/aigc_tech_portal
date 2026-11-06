@@ -1,0 +1,5 @@
+﻿Provider,Integration Pattern,Approved Uses,Required Controls
+OpenAI / ChatGPT,Server-side,Draft reports; summarize authorized documents; structured extraction; policy review support,No autonomous approval; no browser API keys; role checks; logging; sensitive-data minimization
+Microsoft Copilot Studio,Server-side / enterprise connector,Microsoft 365/SharePoint knowledge; workflow agents; connector actions,Tenant authentication; data policies; human approval for consequential actions
+Google Gemini,Server-side,Multimodal/document analysis; structured output; optional tools,No embedded key; provider/data policy review; role/access boundaries
+Anthropic Claude,Server-side,Long-form analysis; drafting; tool-connected workflows,No embedded key; provider/data policy review; role/access boundaries

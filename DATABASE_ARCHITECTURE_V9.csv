@@ -1,0 +1,16 @@
+﻿Database Area,Purpose,Scale / Control
+PostgreSQL workspaces,Workspace identity and update tracking,Primary key + timestamps
+Workspace snapshots,Recovery copies of sanitized state,Workspace/date index; retention; size limit
+platform_records,High-volume flexible JSONB records,Composite PK; GIN JSONB; org/country/user/status/date indexes
+Organizations,Core organization records,Type/country indexes
+Users,Account/profile metadata; no browser passwords synced,Org/email unique index; RLS foundation
+Projects,RBM project/programme data,Org/status + JSONB indexes
+Reports,Advanced results reports,Org/date + workflow indexes
+Controlled documents,70-document master metadata/status,Domain index
+Finance records,Financial source documents/transactions,Org/date/project/status indexes
+Ledger entries,Double-entry bookkeeping records,Org/date/source indexes
+Budgets,Project/program/operational/admin budgets,Org/fiscal-year index
+Attendance events,Check-in/break/clock-out event history,User/time + org/time indexes
+File objects,Metadata for private files/object storage,Org/category + created indexes
+AI documents,Word/Excel AI working-file metadata,User/date index
+Audit events,Server-side event architecture,Org/time + entity indexes

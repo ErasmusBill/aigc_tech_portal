@@ -1,0 +1,8 @@
+﻿Stage,Portal Status,Primary Actor,Allowed Action,Control
+1,Awaiting Upload,Authorized Global Document Controller,Upload working file,Country Super Admin/IT cannot upload
+2,Working Draft,Authorized Global Document Controller,Edit metadata/draft notes; replace working file,Permanent ID/title locked
+3,Under Review,Board / Advisory / Global Management / granted reviewer,Review and comment,Review history retained
+4,Changes Required,Document Controller,Revise and resubmit,Change rationale required
+5,Awaiting Approval,Authorized Global Approver,Approve or return for changes,Editing and approval separated
+6,Approved — Pending Publication,Authorized Global Approver,Publish controlled version,Effective/release control
+7,Published,Authorized users,Review; request PIN download,Downloaded copies are uncontrolled unless verified against current register

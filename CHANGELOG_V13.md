@@ -1,0 +1,22 @@
+# V13 Change Log — Django + FastAPI Rewrite
+
+- Preserved the V12 UI with no visual redesign.
+- Removed the legacy Node backend from the package.
+- Added Django 6.1.2 backend project.
+- Added FastAPI 0.162.0 API service mounted under `/api/v1`.
+- Added PostgreSQL ORM models and migrations.
+- Added Django user/password hashing and PlatformProfile role mapping.
+- Added bearer API session tokens stored hashed server-side.
+- Added server-first login with local-cache fallback.
+- Added server-backed password reset/change.
+- Added workspace synchronization to PostgreSQL.
+- Added generic high-volume `PlatformRecord` persistence.
+- Added server-side identity synchronization from existing dashboard account records.
+- Added organization-scoped record APIs.
+- Added protected file upload/download API.
+- Added attendance event API.
+- Added AI assistance API and Word/Excel exports.
+- Added Django admin interface.
+- Added bootstrap command for organizations, 93 positions and initial administrator.
+- Added Docker Compose deployment with PostgreSQL 17.
+- Added Django/FastAPI backend tests and validation documentation.

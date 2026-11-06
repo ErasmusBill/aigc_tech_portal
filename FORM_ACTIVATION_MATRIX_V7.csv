@@ -1,0 +1,12 @@
+﻿Dashboard / Module,Activation,Functional Scope
+Time Clock & Attendance,Active,Check In; Break Out; Check Back In; Clock Out; profile photo; detailed date/week/month; optional GPS/map
+Programs & Projects,Active,New Project / Programme; full RBM/ToC/results/SDG/LNOB/risk/safeguarding/MEAL form
+My Project Workspace,Active,Project Document Studio; tasks; budgets; uploaded working/final project files
+Advanced Reports Center,Active,Save Draft; Edit; Submit; upload attachment; View; Print; Download; Pre-Approve; Approve
+AI Assistance Center,Active / dual mode,Secure OpenAI server gateway when configured; structured local drafting fallback otherwise
+Access & PIN Requests,Active,Photo; timestamp; GPS/map; Pending; Pre-Approved; Final Approved/Denied; PIN
+Country Portals & Leadership Directory,Active,Hierarchy network; director profile linkage; country office profile editor; standardized general email
+Global Board Portal,Active,Board account add form; employee-style attendance/profile/TOR/reports/projects/finance oversight
+Advisor Council Portal,Active,Advisor account add form; employee-style attendance/profile/TOR/reports/projects/finance oversight
+Controlled Policy & Governance Library,Active,Upload/replace; Save; View; Review; Draft Edit; Pre-Approve; Final Draft; Approve; Publish; PIN download
+Financial Management Center,Active,Financial source documents; bookkeeping; budgets; download/print; control coding and evidence fields

@@ -1,0 +1,15 @@
+﻿Dashboard,Activated Actions,Status
+Time Clock & Attendance,Check In; Break Out; Check Back In; Clock Out; Daily/Weekly/Monthly/Yearly automatic reports; View Report; Download Excel; Team Excel where authorized,Active
+Dashboard / Management,Add Employee for authorized Super Admin/IT roles; active Time Clock controls,Active
+Programs & Projects,New Project / Programme; Edit; Delete eligible draft; Open Workspace; AI Project Assistant,Active
+Advanced Reports Center,New Report; Save Draft; Edit; Delete eligible draft; Submit; View; Download; Print; Pre-Approve; Approve,Active
+Accounts & Invitations,Create / Invite User; Edit; Delete/deactivate; Email; Send Invite,Active
+Organizations,Add Organization; Edit; Delete/archive eligible; Email; Send confirmation,Active
+Country Portals & Leadership Directory,Manage Director; Edit; Remove/Replace; Create/Invite replacement,Active
+Global Board Portal,Add Board Member; Email; Send Invite,Active
+Advisor Council Portal,Add Advisor; Email; Send Invite,Active
+AI Assistance Center,Generate; Edit; Delete; Save; Word; Excel; auto-save file; Download/Delete AI file,Active
+Controlled Policy & Governance Library,Upload; Replace; View; Review; Draft Edit; Pre-Approve; Final Approve; Publish; PIN Download,Active
+Financial Management Center,Create; Edit; Delete Draft; View; Download; Print; approval/posting controls,Active
+Budgets,Create; Edit; Delete eligible Draft; Print,Active
+Database & Storage,Status; Sync; Restore; Backup; Self-Test — hidden from normal navigation,Active / Hidden

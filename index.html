@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tech4Future-Global Management System V12</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<section id="setupScreen" class="setup-screen hidden">
+  <div class="setup-brand">
+    <img src="assets/t4f-global-logo.jpg" alt="Tech4Future-Global logo">
+    <span>TECH4FUTURE-GLOBAL</span>
+    <h1>Management Platform Setup</h1>
+    <p>Create the first Platform Super Administrator. No demo users, passwords, donors, sponsors, partners, board members, advisors, or employee records are preloaded.</p>
+  </div>
+  <form id="setupForm" class="setup-card">
+    <span class="eyebrow">FIRST-TIME SECURE SETUP</span>
+    <h2>Create Platform Super Administrator</h2>
+    <label>Full name<input id="setupName" required></label>
+    <label>Email address<input id="setupEmail" type="email" required></label>
+    <label>Assigned hierarchy position<select id="setupPosition" required></select></label>
+    <label>Initial password<input id="setupPassword" type="password" minlength="8" maxlength="8" required></label>
+    <label>Confirm password<input id="setupConfirm" type="password" minlength="8" maxlength="8" required></label>
+    <div id="setupError" class="form-error"></div>
+    <button class="btn primary full">Create Platform Administrator</button>
+    <small>This local prototype stores credentials in the browser. Production deployment must replace this with server-side authentication, hashed passwords, MFA, secure invitations and audit logging.</small>
+  </form>
+</section>
+
+<section id="loginScreen" class="login-screen hidden">
+  <div class="login-visual">
+    <img src="assets/t4f-global-logo.jpg" alt="Tech4Future-Global logo">
+    <span>TECH4FUTURE-GLOBAL</span>
+    <h1>Integrated Management & Governance Platform</h1>
+    <p>Position-based portals for governance, advisory leadership, global management, West Africa operations, employees, volunteers, fiscal sponsorship and approved external organizations.</p>
+    <div class="login-features">
+      <div><b>93</b><span>Hierarchy positions loaded</span></div>
+      <div><b>70</b><span>Controlled records in the Master Official Register</span></div>
+      <div><b>16</b><span>West Africa country portals</span></div>
+      <div><b>6</b><span>Reporting cycles for every user</span></div>
+      <div><b>17+</b><span>Financial & bookkeeping templates</span></div>
+      <div><b>LIVE</b><span>Employee time clock & attendance</span></div>
+    </div>
+  </div>
+  <form id="loginForm" class="login-card">
+    <span class="eyebrow">AUTHORIZED ACCESS</span>
+    <h2>Sign in</h2>
+    <label>Organization<select id="loginOrg" required></select></label>
+    <label>Email / Username<input id="loginEmail" required autocomplete="username"></label>
+    <label>Password<input id="loginPassword" required type="password" autocomplete="current-password"></label>
+    <div id="loginError" class="form-error"></div>
+    <button class="btn primary full">Sign in securely</button><button class="btn secondary full" type="button" onclick="fillInitialAdminLogin()">Use Initial Super Admin</button>
+    <p class="login-help">Accounts are created by authorized administrators. New users receive a temporary password and must change it after first sign-in.</p>
+  </form>
+</section>
+
+<div id="portalShell" class="portal hidden">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><img src="assets/t4f-global-logo.jpg"><div><b>T4F-Global</b><span>Management Platform V12</span></div></div>
+    <div class="org-session"><span id="orgTypeLabel">ORGANIZATION</span><b id="orgNameLabel"></b><small id="positionLabel"></small></div>
+    <nav id="sideNav"></nav>
+    <div class="sidebar-profile">
+      <div id="sidebarAvatar" class="sidebar-avatar">U</div>
+      <div><b id="sidebarName"></b><small id="sidebarEmail"></small></div>
+      <button id="logoutBtn">Sign out</button>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div><span id="pageKicker">PORTAL</span><h1 id="pageTitle">Dashboard</h1></div>
+      <div class="top-actions">
+        <label id="orgSwitchWrap" class="org-switch hidden">Viewing<select id="orgSwitch"></select></label>
+        <label class="search"><span>⌕</span><input id="globalSearch" placeholder="Search portal"></label>
+        <button id="profileButton" class="top-profile"><span id="topAvatar">U</span><small>My Profile</small></button>
+      </div>
+    </header>
+    <section id="content" class="content"></section>
+  </main>
+</div>
+
+<div id="modal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><span class="eyebrow" id="modalKicker">MANAGEMENT</span><h2 id="modalTitle"></h2></div><button id="modalClose" class="close">×</button></div><div id="modalBody"></div></div></div>
+<div id="toast" class="toast"></div>
+<script src="hierarchy-data.js"></script>
+<script src="api-client.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

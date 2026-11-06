@@ -1,0 +1,5 @@
+﻿Control,Behavior
+Edit,User can edit the title/task and saved AI draft content from My Recent AI Drafts.
+Delete,User can permanently remove a saved AI draft after confirmation.
+Scope,AI history remains scoped to the signed-in user in the browser prototype.
+Live AI,Secure backend AI gateway remains separate from browser credentials.

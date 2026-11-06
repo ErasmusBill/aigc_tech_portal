@@ -1,0 +1,13 @@
+﻿Module / Record,Create,Edit,View,Download,Print,Bookkeeping Link
+Invoice,Authorized finance employees,Authorized finance employees / heads,Position-scoped,CSV,Yes,Posted records generate debit/credit ledger entries
+Quotation,Authorized finance employees,Authorized finance employees / heads,Position-scoped,CSV,Yes,Posted records generate debit/credit ledger entries
+Payroll,Authorized finance employees,Authorized finance employees / heads,Position-scoped,CSV,Yes,Posted records generate debit/credit ledger entries
+Disbursement,Authorized finance employees,Authorized finance employees / heads,Position-scoped,CSV,Yes,Posted records generate debit/credit ledger entries
+Petty Cash,Authorized finance employees,Authorized finance employees / heads,Position-scoped,CSV,Yes,Posted records generate debit/credit ledger entries
+Expenditure,Authorized finance employees,Authorized finance employees / heads,Position-scoped,CSV,Yes,Posted records generate debit/credit ledger entries
+Receipt,Authorized finance employees,Authorized finance employees / heads,Position-scoped,CSV,Yes,Posted records generate debit/credit ledger entries
+Financial Transaction,Authorized finance employees,Authorized finance employees / heads,Position-scoped,CSV,Yes,Posted records generate debit/credit ledger entries
+Project Budget,Finance staff / project heads,Authorized heads,Position-scoped,Via browser export/print,Yes,Actuals linked from finance records
+Program Budget,Finance staff / project heads,Authorized heads,Position-scoped,Via browser export/print,Yes,Actuals linked from finance records
+Operational Budget,Finance staff / project heads,Authorized heads,Position-scoped,Via browser export/print,Yes,Actuals linked from finance records
+Administrative Budget,Finance staff / project heads,Authorized heads,Position-scoped,Via browser export/print,Yes,Actuals linked from finance records

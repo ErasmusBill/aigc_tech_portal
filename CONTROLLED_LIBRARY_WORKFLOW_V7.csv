@@ -1,0 +1,13 @@
+﻿Stage,Workflow Status,Meaning,Primary Control Role
+1,Awaiting Upload,Canonical record exists; working file may be added by authorized global publisher.,Global Super Admin / authorized global document publisher
+2,Working Draft,Uploaded working file saved; not adopted/effective.,Authorized global document publisher
+3,Draft Edit,Editor revises working content/metadata; change log required.,Authorized global editor or user granted Draft Edit
+4,Under Review,Draft submitted to reviewer(s).,Assigned reviewer / Board / Advisor / management according to scope
+5,Changes Required,Reviewer returns required revisions.,Reviewer; editor responds
+6,Reviewed,Review completed with no blocking changes.,Assigned reviewer
+7,Awaiting Pre-Approval,Reviewer recommends advancement to responsible head.,Responsible head
+8,Pre-Approved,Responsible head authorizes preparation of final draft; not final approval.,Responsible head / authorized global control role
+9,Final Draft,Final working version prepared for approval.,Authorized editor/document owner
+10,Awaiting Final Approval,Final approval package/decision pending.,Authority recorded in T4FG-LIB-004
+11,Approved — Pending Publication,Approval decision recorded; controlled release still pending.,Recorded approval authority
+12,Published,Authorized controlled version released with effective/version evidence.,Authorized global publisher

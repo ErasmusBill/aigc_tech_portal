@@ -169,71 +169,107 @@ jobs:
             git reset --hard origin/main
             echo "==> Deployed Commit: $(git rev-parse --short HEAD)"
 
-            # Determine Docker command
-            if docker compose version >/dev/null 2>&1; then
-              DOCKER="docker compose"
-            elif sudo -n docker compose version >/dev/null 2>&1; then
-              DOCKER="sudo docker compose"
-            elif [ -n "$USER_PASS" ]; then
-              DOCKER="echo '$USER_PASS' | sudo -S docker compose"
-            else
-              DOCKER="docker compose"
-            fi
-            echo "==> Using Docker runner: $DOCKER"
+            # Define robust sudo and docker runners
+            run_sudo() {
+              if [ "$(id -u)" -eq 0 ]; then
+                "$@"
+              elif sudo -n true 2>/dev/null; then
+                sudo "$@"
+              elif [ -n "$USER_PASS" ]; then
+                echo "$USER_PASS" | sudo -S -p '' "$@"
+              else
+                "$@"
+              fi
+            }
 
-            # Ensure .env exists
+            run_docker() {
+              if docker compose version >/dev/null 2>&1 && docker ps >/dev/null 2>&1; then
+                docker compose "$@"
+              elif docker-compose version >/dev/null 2>&1 && docker-compose ps >/dev/null 2>&1; then
+                docker-compose "$@"
+              elif command -v docker >/dev/null 2>&1 && run_sudo docker compose version >/dev/null 2>&1; then
+                run_sudo docker compose "$@"
+              else
+                run_sudo docker-compose "$@"
+              fi
+            }
+
+            # Ensure .env exists with production secrets
             if [ ! -f .env ]; then
               echo "==> Generating .env from .env.production.example..."
               cp .env.production.example .env
+              RANDOM_SECRET=$(openssl rand -hex 32 2>/dev/null || date +%s%N)
+              RANDOM_DB_PASS=$(openssl rand -hex 16 2>/dev/null || echo "t4f_secure_db_pass_2027")
+              sed -i "s|generate-and-set-a-strong-random-secret-key-here|$RANDOM_SECRET|g" .env
+              sed -i "s|generate-a-strong-database-password-here|$RANDOM_DB_PASS|g" .env
             fi
 
             # Build and start Docker stack (PostgreSQL 17, Redis, Web on port 8080)
             echo "==> Starting production containers..."
-            $DOCKER -f docker-compose.prod.yml build
-            $DOCKER -f docker-compose.prod.yml up -d
+            run_docker -f docker-compose.prod.yml build
+            run_docker -f docker-compose.prod.yml up -d
 
             # Run database migrations
             echo "==> Running database migrations..."
-            $DOCKER -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
+            run_docker -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
 
             # Collect static files
             echo "==> Collecting static assets..."
-            $DOCKER -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput || true
+            run_docker -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput || true
 
             # Seed platform users
             echo "==> Seeding platform users..."
-            $DOCKER -f docker-compose.prod.yml exec -T web python manage.py seed_all_users || true
+            run_docker -f docker-compose.prod.yml exec -T web python manage.py seed_all_users || true
 
             # Configure Host Nginx & SSL
             echo "==> Setting up Host Nginx configuration..."
             NGINX_CONF="$TARGET_DIR/docker/nginx/host-nginx-portal.t4f-global.org.conf"
-            if [ -f "$NGINX_CONF" ] && [ -d "/etc/nginx/sites-available" ]; then
-              echo "==> Deploying Nginx site config for portal.t4f-global.org..."
-              if sudo -n true 2>/dev/null; then
-                sudo cp "$NGINX_CONF" /etc/nginx/sites-available/portal.t4f-global.org
-                sudo ln -sf /etc/nginx/sites-available/portal.t4f-global.org /etc/nginx/sites-enabled/
-                sudo nginx -t && sudo systemctl reload nginx || true
-                if command -v certbot >/dev/null 2>&1 && [ ! -d "/etc/letsencrypt/live/portal.t4f-global.org" ]; then
-                  sudo certbot --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect || true
+            if [ -f "$NGINX_CONF" ]; then
+              if [ -d "/etc/nginx/sites-available" ]; then
+                echo "==> Deploying Nginx site to /etc/nginx/sites-available..."
+                run_sudo cp "$NGINX_CONF" /etc/nginx/sites-available/portal.t4f-global.org
+                run_sudo ln -sf /etc/nginx/sites-available/portal.t4f-global.org /etc/nginx/sites-enabled/
+              elif [ -d "/etc/nginx/conf.d" ]; then
+                echo "==> Deploying Nginx site to /etc/nginx/conf.d..."
+                run_sudo cp "$NGINX_CONF" /etc/nginx/conf.d/portal.t4f-global.org.conf
+              fi
+
+              # Validate and reload Nginx
+              if run_sudo nginx -t; then
+                echo "==> Reloading Nginx..."
+                run_sudo systemctl reload nginx || run_sudo service nginx reload || true
+
+                # Automatic Let's Encrypt SSL via Certbot
+                if command -v certbot >/dev/null 2>&1; then
+                  if [ ! -d "/etc/letsencrypt/live/portal.t4f-global.org" ]; then
+                    echo "==> Issuing Let's Encrypt SSL certificate for portal.t4f-global.org..."
+                    run_sudo certbot --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect || true
+                  else
+                    echo "==> SSL certificate already active in /etc/letsencrypt/live/portal.t4f-global.org"
+                  fi
+                else
+                  echo "==> [Notice] Certbot is not installed on this VPS host."
                 fi
-              elif [ -n "$USER_PASS" ]; then
-                echo "$USER_PASS" | sudo -S cp "$NGINX_CONF" /etc/nginx/sites-available/portal.t4f-global.org || true
-                echo "$USER_PASS" | sudo -S ln -sf /etc/nginx/sites-available/portal.t4f-global.org /etc/nginx/sites-enabled/ || true
-                echo "$USER_PASS" | sudo -S nginx -t && echo "$USER_PASS" | sudo -S systemctl reload nginx || true
-                if [ ! -d "/etc/letsencrypt/live/portal.t4f-global.org" ]; then
-                  echo "$USER_PASS" | sudo -S certbot --nginx -d portal.t4f-global.org --non-interactive --agree-tos --email admin@t4f-global.org --redirect || true
-                fi
+              else
+                echo "::warning::Nginx configuration test failed, skipping reload to prevent downtime."
               fi
             fi
 
-            # Health Check
+            # Health Check (Retry loop)
             echo "==> Checking application health on port 8080..."
-            sleep 4
-            if curl -sf http://127.0.0.1:8080/api/v1/system/health > /dev/null; then
-              echo "==> [SUCCESS] App is healthy and responding at http://127.0.0.1:8080"
-            else
-              echo "==> [NOTICE] Containers launched. Checking docker status:"
-              $DOCKER -f docker-compose.prod.yml ps
+            HEALTH_OK=0
+            for i in $(seq 1 15); do
+              sleep 3
+              if curl -sf http://127.0.0.1:8080/api/v1/system/health > /dev/null; then
+                echo "==> [SUCCESS] App is healthy and responding at http://127.0.0.1:8080 (attempt $i)"
+                HEALTH_OK=1
+                break
+              fi
+              echo "==> Waiting for container to become healthy... (attempt $i/15)"
+            done
+            if [ "$HEALTH_OK" -eq 0 ]; then
+              echo "==> [WARNING] Health check failed after 45s. Showing container logs:"
+              run_docker -f docker-compose.prod.yml logs --tail=40 web
             fi
 
             echo "================================================================"

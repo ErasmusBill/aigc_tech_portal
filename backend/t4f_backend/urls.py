@@ -11,5 +11,7 @@ urlpatterns = [
     path("app.js", views.frontend_file, {"relative_path": "app.js"}),
     path("api-client.js", views.frontend_file, {"relative_path": "api-client.js"}),
     path("hierarchy-data.js", views.frontend_file, {"relative_path": "hierarchy-data.js"}),
+    path("api/email/send", views.send_email_api, name="api-email-send"),
+    path("api/v1/email/send", views.send_email_api, name="api-v1-email-send"),
     re_path(r"^assets/(?P<relative_path>.+)$", views.frontend_asset),
 ]

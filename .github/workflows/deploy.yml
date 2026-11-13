@@ -96,8 +96,8 @@ jobs:
             echo "::error::Missing VPS_USERNAME! Please add VPS_USERNAME in GitHub: Settings > Secrets and variables > Actions > Secrets (or Variables)."
             HAS_ERRORS=1
           fi
-          if [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
-            echo "::error::Missing VPS_SSH_KEY! Please add your private SSH key as VPS_SSH_KEY in GitHub: Settings > Secrets and variables > Actions > Secrets."
+          if [ -z "${{ secrets.VPS_SSH_KEY }}" ] && [ -z "${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }}" ]; then
+            echo "::error::Missing VPS_SSH_KEY or VPS_PASSWORD! Please add VPS_SSH_KEY (recommended) or VPS_PASSWORD in GitHub: Settings > Secrets and variables > Actions > Secrets."
             HAS_ERRORS=1
           fi
           if [ "$HAS_ERRORS" -eq 1 ]; then
@@ -112,8 +112,8 @@ jobs:
             echo "     Name: VPS_HOST             Value: <your VPS IP address, e.g. 187.7.19.226>"
             echo "     Name: VPS_USERNAME         Value: <your SSH username, e.g. erasmus>"
             echo "     Name: VPS_SSH_KEY          Value: <Contents of your private SSH key>"
+            echo "     Optional: VPS_PASSWORD       Value: <VPS login or sudo password>"
             echo "     Optional: VPS_SSH_PASSPHRASE Value: <Passphrase for SSH key if encrypted>"
-            echo "     Optional: VPS_PASSWORD       Value: <Sudo password if needed for privileged commands>"
             echo "=================================================================================="
             exit 1
           fi
@@ -129,6 +129,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME || vars.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE || '' }}
+          password: ${{ secrets.VPS_PASSWORD || vars.VPS_PASSWORD }}
           port: ${{ vars.VPS_PORT || 22 }}
           script_stop: false
           command_timeout: 30m

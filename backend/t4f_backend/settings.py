@@ -6,6 +6,15 @@ from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BASE_DIR.parent
 
+try:
+    from dotenv import load_dotenv
+    for _env_candidate in [PROJECT_ROOT / ".env", BASE_DIR / ".env"]:
+        if _env_candidate.exists():
+            load_dotenv(_env_candidate)
+            break
+except ImportError:
+    pass
+
 # Core Environment & Security
 DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() == "true"
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-change-me-before-production")
@@ -145,7 +154,9 @@ EMAIL_HOST = os.getenv("SMTP_HOST", "")
 EMAIL_PORT = int(os.getenv("SMTP_PORT", "587"))
 EMAIL_HOST_USER = os.getenv("SMTP_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("SMTP_PASS", "")
-EMAIL_USE_TLS = os.getenv("SMTP_TLS", "true").lower() == "true"
+EMAIL_USE_SSL = os.getenv("SMTP_SSL", "false").lower() == "true"
+EMAIL_USE_TLS = os.getenv("SMTP_TLS", "false" if EMAIL_USE_SSL else "true").lower() == "true"
+EMAIL_TIMEOUT = int(os.getenv("SMTP_TIMEOUT", "15"))
 DEFAULT_FROM_EMAIL = os.getenv("SMTP_FROM", "Tech4Future-Global <no-reply@t4f-global.org>")
 
 # Structured Production Logging

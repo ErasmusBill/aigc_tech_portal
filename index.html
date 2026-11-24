@@ -145,22 +145,57 @@
 
 <div id="portalShell" class="portal hidden">
   <aside class="sidebar">
-    <div class="sidebar-brand"><img src="assets/t4f-global-logo.jpg"><div><b>T4F-Global</b><span>Management Platform V12</span></div></div>
-    <div class="org-session"><span id="orgTypeLabel">ORGANIZATION</span><b id="orgNameLabel"></b><small id="positionLabel"></small></div>
+    <div class="sidebar-brand">
+      <img src="assets/t4f-logo.png" alt="Tech4Future-Global Crest">
+      <div>
+        <div class="brand-title-wrap">
+          <b>Tech4Future</b>
+          <span class="live-pulse"></span>
+        </div>
+        <span class="brand-version">Enterprise Platform V13</span>
+      </div>
+    </div>
+    <div class="org-session">
+      <span id="orgTypeLabel">ORGANIZATION</span>
+      <b id="orgNameLabel"></b>
+      <small id="positionLabel"></small>
+    </div>
     <nav id="sideNav"></nav>
     <div class="sidebar-profile">
       <div id="sidebarAvatar" class="sidebar-avatar">U</div>
-      <div><b id="sidebarName"></b><small id="sidebarEmail"></small></div>
-      <button id="logoutBtn">Sign out</button>
+      <div class="profile-info-wrap">
+        <b id="sidebarName"></b>
+        <small id="sidebarEmail"></small>
+      </div>
+      <button id="logoutBtn" class="sidebar-logout-btn" title="Sign out of portal">Sign out</button>
     </div>
   </aside>
   <main class="main">
     <header class="topbar">
-      <div><span id="pageKicker">PORTAL</span><h1 id="pageTitle">Dashboard</h1></div>
+      <div class="topbar-title-wrap">
+        <span id="pageKicker">PORTAL</span>
+        <div class="title-with-pill">
+          <h1 id="pageTitle">Dashboard</h1>
+          <span id="topOrgBadge" class="top-org-badge"></span>
+        </div>
+      </div>
       <div class="top-actions">
-        <label id="orgSwitchWrap" class="org-switch hidden">Viewing<select id="orgSwitch"></select></label>
-        <label class="search"><span>⌕</span><input id="globalSearch" placeholder="Search portal"></label>
-        <button id="profileButton" class="top-profile"><span id="topAvatar">U</span><small>My Profile</small></button>
+        <label id="orgSwitchWrap" class="org-switch hidden">
+          <span>Scope</span>
+          <select id="orgSwitch"></select>
+        </label>
+        <label class="search">
+          <span>⌕</span>
+          <input id="globalSearch" placeholder="Search portal (press Esc to clear)...">
+        </label>
+        <button id="profileButton" class="top-profile" title="View my account profile">
+          <span id="topAvatar">U</span>
+          <small id="topProfileName">My Profile</small>
+        </button>
+        <button id="topLogoutBtn" class="top-logout-btn" title="Sign out of portal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Sign out</span>
+        </button>
       </div>
     </header>
     <section id="content" class="content"></section>

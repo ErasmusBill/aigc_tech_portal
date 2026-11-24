@@ -88,3 +88,11 @@ async def logout(authorization: str | None = Header(default=None), cu: CurrentUs
         token_hash=sha256(token.encode("utf-8")).hexdigest()
         await sync_to_async(ApiSession.objects.filter(token_hash=token_hash).update,thread_sensitive=True)(revoked_at=timezone.now())
     return {"ok":True}
+
+@router.get("/organizations")
+async def list_auth_organizations():
+    from platform_core.models import Organization
+    def get_orgs():
+        return list(Organization.objects.all().order_by("name").values("id", "name", "organization_type", "country", "status"))
+    return await sync_to_async(get_orgs, thread_sensitive=True)()
+

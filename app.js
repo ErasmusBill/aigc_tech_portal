@@ -419,6 +419,8 @@ async function backendLogin(org,email,pw){
 }
 function showInitialScreen(){
  $('#portalShell').classList.add('hidden');
+ fillLoginOrganizations();
+ loadBackendOrganizations();
  if(db.users.length===0){$('#setupScreen').classList.remove('hidden');$('#loginScreen').classList.add('hidden');}
  else{$('#setupScreen').classList.add('hidden');$('#loginScreen').classList.remove('hidden');fillLoginOrganizations();}
 }
@@ -429,7 +431,42 @@ $('#setupForm').addEventListener('submit',function(e){e.preventDefault();var n=$
 function fillInitialAdminLogin(){
  // Initial admin shortcut removed for production security
 }
-function fillLoginOrganizations(){var ids={};db.users.filter(function(u){return u.status!=='Inactive';}).forEach(function(u){ids[u.orgId]=true;});$('#loginOrg').innerHTML=db.organizations.filter(function(o){return ids[o.id];}).map(function(o){return '<option value="'+o.id+'">'+esc(o.name)+'</option>';}).join('');}
+async function loadBackendOrganizations(){
+ try{
+  var res=await fetch('/api/v1/auth/organizations');
+  if(res.ok){
+   var list=await res.json();
+   if(Array.isArray(list)&&list.length>0){
+    list.forEach(function(o){
+     var ex=db.organizations.find(function(x){return x.id===o.id;});
+     if(ex){
+      ex.name=o.name||ex.name;
+      ex.type=o.organization_type||ex.type;
+      ex.country=o.country||ex.country;
+      ex.status=o.status||ex.status;
+     }else{
+      db.organizations.push({id:o.id,name:o.name,type:o.organization_type||'general',country:o.country||'',parentId:o.organization_type==='country_office'?'t4f-hq':null,status:o.status||'Active',contact:{name:'',email:'',phone:'',address:'',fax:'',bio:''}});
+     }
+    });
+    save();
+    fillLoginOrganizations();
+   }
+  }
+ }catch(e){}
+}
+function fillLoginOrganizations(){
+ var orgs=(db.organizations&&db.organizations.length>0)?db.organizations:(DATA.organizations||[]);
+ var sorted=orgs.slice().sort(function(a,b){
+  if(a.id==='t4f-hq')return -1;
+  if(b.id==='t4f-hq')return 1;
+  return (a.name||'').localeCompare(b.name||'');
+ });
+ var cur=$('#loginOrg')?$('#loginOrg').value:'';
+ if($('#loginOrg')){
+  $('#loginOrg').innerHTML=sorted.map(function(o){return '<option value="'+o.id+'">'+esc(o.name)+'</option>';}).join('');
+  if(cur&&sorted.some(function(o){return o.id===cur;}))$('#loginOrg').value=cur;
+ }
+}
 $('#loginForm').addEventListener('submit',async function(e){e.preventDefault();var org=$('#loginOrg').value,email=$('#loginEmail').value.trim().toLowerCase(),pw=$('#loginPassword').value,u=null;try{u=await backendLogin(org,email,pw);}catch(authErr){$('#loginError').textContent='Invalid organization, email, or password.';return;}if(!u){u=db.users.find(function(x){return x.orgId===org&&x.email.toLowerCase()===email&&x.password===pw&&x.status!=='Inactive';});}if(!u){$('#loginError').textContent='Invalid organization, email, or password. If the server is online, verify the Django account credentials and organization.';return;}session=clone(u);viewedOrgId=u.orgId;sessionStorage.setItem(SESSION_KEY,JSON.stringify({id:u.id}));logAction('Signed in','Portal access',u.orgId);openPortal();if(u.mustReset)forcePasswordChange();});
 $('#logoutBtn').addEventListener('click',async function(){if(session)logAction('Signed out','Session ended',session.orgId);if(window.T4FBackend)await window.T4FBackend.logout();session=null;sessionStorage.removeItem(SESSION_KEY);showInitialScreen();});
 function emptyProfile(country){return {photo:'',phone:'',country:country||'',city:'',bio:'',education:'',qualifications:'',certifications:'',experience:'',appointmentDate:'',termStart:'',termEnd:'',linkedin:'',officeAddress:'',fax:''};}

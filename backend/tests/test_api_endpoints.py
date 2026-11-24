@@ -114,3 +114,13 @@ def test_api_attendance_event_atomic_and_pagination(auth_headers):
     assert body["total"] >= 1
     assert len(body["rows"]) >= 1
     assert body["rows"][0]["eventType"] == "CHECK_IN"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_api_auth_organizations_public():
+    Organization.objects.create(id="org-public-test", name="Public Test Org", organization_type="country_office", country="Ghana")
+    res = client.get("/auth/organizations")
+    assert res.status_code == 200
+    data = res.json()
+    assert any(o["id"] == "org-public-test" for o in data)
+

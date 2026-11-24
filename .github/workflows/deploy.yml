@@ -215,17 +215,13 @@ jobs:
             run_docker -f docker-compose.prod.yml build
             run_docker -f docker-compose.prod.yml up -d
 
-            # Run database migrations with fake-initial support for pre-existing tables
+            # Run database migrations for schema updates (safe, never drops tables)
             echo "==> Running database migrations..."
             run_docker -f docker-compose.prod.yml exec -T web python manage.py migrate --fake-initial --noinput
 
             # Collect static files
             echo "==> Collecting static assets..."
             run_docker -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput || true
-
-            # Seed platform users
-            echo "==> Seeding platform users..."
-            run_docker -f docker-compose.prod.yml exec -T web python manage.py seed_all_users || true
 
             # Configure Host Nginx & SSL
             echo "==> Setting up Host Nginx configuration..."

@@ -260,7 +260,7 @@ class Command(BaseCommand):
 
             pos = Position.objects.filter(pk=a["position_id"]).first()
 
-            user, _ = User.objects.get_or_create(
+            user, created = User.objects.get_or_create(
                 username=email,
                 defaults={
                     "email": email,
@@ -271,14 +271,17 @@ class Command(BaseCommand):
                     "is_active": True,
                 },
             )
-            user.email = email
-            user.first_name = a["first_name"]
-            user.last_name = a["last_name"]
-            user.is_staff = a["is_staff"]
-            user.is_superuser = a["is_superuser"]
-            user.is_active = True
-            user.set_password(a["password"])
-            user.save()
+            if created:
+                user.set_password(a["password"])
+                user.save()
+            else:
+                user.email = email
+                user.first_name = a["first_name"]
+                user.last_name = a["last_name"]
+                user.is_staff = a["is_staff"]
+                user.is_superuser = a["is_superuser"]
+                user.is_active = True
+                user.save(update_fields=["email", "first_name", "last_name", "is_staff", "is_superuser", "is_active"])
 
             PlatformProfile.objects.update_or_create(
                 user=user,
@@ -314,7 +317,7 @@ class Command(BaseCommand):
                 },
             }
             if ws_user:
-                ws_user.update(user_data)
+                pass
             else:
                 users_list.append(user_data)
                 existing_ws_by_email[email] = user_data

@@ -30,29 +30,117 @@
 
 <section id="loginScreen" class="login-screen hidden">
   <div class="login-visual">
-    <img src="assets/t4f-global-logo.jpg" alt="Tech4Future-Global logo">
-    <span>TECH4FUTURE-GLOBAL</span>
-    <h1>Integrated Management & Governance Platform</h1>
-    <p>Position-based portals for governance, advisory leadership, global management, West Africa operations, employees, volunteers, fiscal sponsorship and approved external organizations.</p>
+    <div class="brand-pill">
+      <span class="live-pulse"></span>
+      <span>OFFICIAL GOVERNANCE &amp; OPERATIONS PLATFORM</span>
+    </div>
+    <div class="logo-title-row">
+      <img src="assets/t4f-global-logo.jpg" alt="Tech4Future-Global Logo" class="portal-crest">
+      <div>
+        <span class="brand-sub">TECH4FUTURE-GLOBAL</span>
+        <h1>Integrated Management &amp; Governance Platform</h1>
+      </div>
+    </div>
+    <p class="brand-desc">Position-based portals for global governance, advisory leadership, West Africa regional operations, employee management, and verified stakeholder portals.</p>
+    
     <div class="login-features">
-      <div><b>93</b><span>Hierarchy positions loaded</span></div>
-      <div><b>70</b><span>Controlled records in the Master Official Register</span></div>
-      <div><b>16</b><span>West Africa country portals</span></div>
-      <div><b>6</b><span>Reporting cycles for every user</span></div>
-      <div><b>17+</b><span>Financial & bookkeeping templates</span></div>
-      <div><b>LIVE</b><span>Employee time clock & attendance</span></div>
+      <div class="feature-card">
+        <div class="feature-icon">🏛️</div>
+        <b>93</b>
+        <span>Hierarchy Positions</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌍</div>
+        <b>16</b>
+        <span>West Africa Portals</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <b>70</b>
+        <span>Controlled Records</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⏱️</div>
+        <b>LIVE</b>
+        <span>Employee Time Clock</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <b>6</b>
+        <span>Multi-Tier Reporting Cycles</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💼</div>
+        <b>17+</b>
+        <span>Financial &amp; Ledger Tools</span>
+      </div>
+    </div>
+
+    <div class="visual-footer">
+      <span>🔒 256-Bit SSL Encrypted</span>
+      <span>•</span>
+      <span>Role-Based Access Control</span>
+      <span>•</span>
+      <span>Enterprise PostgreSQL 17</span>
     </div>
   </div>
-  <form id="loginForm" class="login-card">
-    <span class="eyebrow">AUTHORIZED ACCESS</span>
-    <h2>Sign in</h2>
-    <label>Organization<select id="loginOrg" required></select></label>
-    <label>Email / Username<input id="loginEmail" required autocomplete="username"></label>
-    <label>Password<input id="loginPassword" required type="password" autocomplete="current-password"></label>
-    <div id="loginError" class="form-error"></div>
-    <button class="btn primary full">Sign in securely</button>
-    <p class="login-help">Accounts are created by authorized administrators. New users receive a temporary password and must change it after first sign-in.</p>
-  </form>
+
+  <div class="login-panel">
+    <form id="loginForm" class="login-card">
+      <div class="card-top">
+        <span class="eyebrow">AUTHORIZED PORTAL ACCESS</span>
+        <h2>Sign in to Portal</h2>
+        <p class="card-subtitle">Select your organization and enter your verified credentials</p>
+      </div>
+
+      <div class="form-field">
+        <label for="loginOrg">
+          <span class="field-label-text">Organization</span>
+          <span class="field-hint">HQ, Country Office or Partner</span>
+        </label>
+        <div class="select-wrap">
+          <select id="loginOrg" required></select>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="loginEmail">
+          <span class="field-label-text">Email Address or Username</span>
+        </label>
+        <div class="input-wrap">
+          <input id="loginEmail" required autocomplete="username" placeholder="e.g. director.nigeria@t4f-global.org">
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="loginPassword">
+          <span class="field-label-text">Password</span>
+        </label>
+        <div class="input-wrap password-wrap">
+          <input id="loginPassword" required type="password" autocomplete="current-password" placeholder="Enter password">
+          <button type="button" id="toggleLoginPassword" class="pwd-toggle-btn" title="Toggle password visibility" aria-label="Toggle password visibility">
+            <svg id="eyeIconOpen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <svg id="eyeIconClosed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="loginError" class="form-error"></div>
+
+      <button type="submit" class="btn primary full login-btn">
+        <span>Sign in securely</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
+
+      <div class="login-card-foot">
+        <p class="login-help">Accounts are provisioned by authorized administrators. New users receive a temporary password and must change it after first sign-in.</p>
+        <div class="admin-quick-link">
+          <span>Platform Administrator?</span>
+          <a href="/admin/" class="admin-link">Access Django Admin Console &rarr;</a>
+        </div>
+      </div>
+    </form>
+  </div>
 </section>
 
 <div id="portalShell" class="portal hidden">

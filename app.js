@@ -456,17 +456,105 @@ async function loadBackendOrganizations(){
 }
 function fillLoginOrganizations(){
  var orgs=(db.organizations&&db.organizations.length>0)?db.organizations:(DATA.organizations||[]);
- var sorted=orgs.slice().sort(function(a,b){
-  if(a.id==='t4f-hq')return -1;
-  if(b.id==='t4f-hq')return 1;
-  return (a.name||'').localeCompare(b.name||'');
- });
- var cur=$('#loginOrg')?$('#loginOrg').value:'';
- if($('#loginOrg')){
-  $('#loginOrg').innerHTML=sorted.map(function(o){return '<option value="'+o.id+'">'+esc(o.name)+'</option>';}).join('');
-  if(cur&&sorted.some(function(o){return o.id===cur;}))$('#loginOrg').value=cur;
+ var hq=orgs.filter(function(o){return o.id==='t4f-hq'||o.type==='t4f_hq'||o.type==='global_hq';});
+ var countryOffices=orgs.filter(function(o){return o.type==='country_office'||(o.parentId==='t4f-hq'&&o.id!=='t4f-hq');})
+   .sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
+ var others=orgs.filter(function(o){
+   return !hq.some(function(x){return x.id===o.id;})&&!countryOffices.some(function(x){return x.id===o.id;});
+ }).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
+
+ var html='';
+ if(hq.length>0){
+   html+='<optgroup label="Global Headquarters">';
+   hq.forEach(function(o){html+='<option value="'+o.id+'">'+esc(o.name)+'</option>';});
+   html+='</optgroup>';
+ }
+ if(countryOffices.length>0){
+   html+='<optgroup label="West Africa Country Portals ('+countryOffices.length+' Offices)">';
+   countryOffices.forEach(function(o){html+='<option value="'+o.id+'">'+esc(o.name)+'</option>';});
+   html+='</optgroup>';
+ }
+ if(others.length>0){
+   html+='<optgroup label="Fiscal Sponsors & Partners">';
+   others.forEach(function(o){html+='<option value="'+o.id+'">'+esc(o.name)+'</option>';});
+   html+='</optgroup>';
+ }
+
+ var sel=$('#loginOrg');
+ if(sel){
+   var cur=sel.value;
+   sel.innerHTML=html;
+   if(cur&&orgs.some(function(o){return o.id===cur;}))sel.value=cur;
  }
 }
+
+function setupLoginSmartOrgDetector(){
+ var emailInput=$('#loginEmail');
+ var orgSelect=$('#loginOrg');
+ if(!emailInput||!orgSelect)return;
+ emailInput.addEventListener('input',function(e){
+  var v=(e.target.value||'').toLowerCase().trim();
+  if(!v)return;
+  var matches=[
+   {key:'nigeria',id:'t4f-nigeria'},
+   {key:'ghana',id:'t4f-ghana'},
+   {key:'benin',id:'t4f-benin'},
+   {key:'burkina',id:'t4f-burkina-faso'},
+   {key:'cabo',id:'t4f-cabo-verde'},
+   {key:'verde',id:'t4f-cabo-verde'},
+   {key:'côte',id:'t4f-cote-d-ivoire'},
+   {key:'cote',id:'t4f-cote-d-ivoire'},
+   {key:'gambia',id:'t4f-gambia'},
+   {key:'guinea-bissau',id:'t4f-guinea-bissau'},
+   {key:'bissau',id:'t4f-guinea-bissau'},
+   {key:'guinea',id:'t4f-guinea'},
+   {key:'liberia',id:'t4f-liberia'},
+   {key:'mali',id:'t4f-mali'},
+   {key:'mauritania',id:'t4f-mauritania'},
+   {key:'niger',id:'t4f-niger'},
+   {key:'senegal',id:'t4f-senegal'},
+   {key:'sierra',id:'t4f-sierra-leone'},
+   {key:'leone',id:'t4f-sierra-leone'},
+   {key:'togo',id:'t4f-togo'},
+   {key:'fmw',id:'fmw'},
+   {key:'admin@',id:'t4f-hq'},
+   {key:'board',id:'t4f-hq'},
+   {key:'advisor',id:'t4f-hq'},
+   {key:'cto@',id:'t4f-hq'},
+   {key:'finance.global',id:'t4f-hq'},
+   {key:'hq',id:'t4f-hq'}
+  ];
+  for(var i=0;i<matches.length;i++){
+   if(v.indexOf(matches[i].key)>=0){
+    if(orgSelect.querySelector('option[value="'+matches[i].id+'"]')){
+     orgSelect.value=matches[i].id;
+     break;
+    }
+   }
+  }
+ });
+}
+
+function setupLoginPasswordToggle(){
+ var btn=$('#toggleLoginPassword');
+ var input=$('#loginPassword');
+ var openIcon=$('#eyeIconOpen');
+ var closedIcon=$('#eyeIconClosed');
+ if(!btn||!input)return;
+ btn.onclick=function(){
+  if(input.type==='password'){
+   input.type='text';
+   if(openIcon)openIcon.style.display='none';
+   if(closedIcon)closedIcon.style.display='block';
+  }else{
+   input.type='password';
+   if(openIcon)openIcon.style.display='block';
+   if(closedIcon)closedIcon.style.display='none';
+  }
+ };
+}
+setupLoginSmartOrgDetector();
+setupLoginPasswordToggle();
 $('#loginForm').addEventListener('submit',async function(e){e.preventDefault();var org=$('#loginOrg').value,email=$('#loginEmail').value.trim().toLowerCase(),pw=$('#loginPassword').value,u=null;try{u=await backendLogin(org,email,pw);}catch(authErr){$('#loginError').textContent='Invalid organization, email, or password.';return;}if(!u){u=db.users.find(function(x){return x.orgId===org&&x.email.toLowerCase()===email&&x.password===pw&&x.status!=='Inactive';});}if(!u){$('#loginError').textContent='Invalid organization, email, or password. If the server is online, verify the Django account credentials and organization.';return;}session=clone(u);viewedOrgId=u.orgId;sessionStorage.setItem(SESSION_KEY,JSON.stringify({id:u.id}));logAction('Signed in','Portal access',u.orgId);openPortal();if(u.mustReset)forcePasswordChange();});
 $('#logoutBtn').addEventListener('click',async function(){if(session)logAction('Signed out','Session ended',session.orgId);if(window.T4FBackend)await window.T4FBackend.logout();session=null;sessionStorage.removeItem(SESSION_KEY);showInitialScreen();});
 function emptyProfile(country){return {photo:'',phone:'',country:country||'',city:'',bio:'',education:'',qualifications:'',certifications:'',experience:'',appointmentDate:'',termStart:'',termEnd:'',linkedin:'',officeAddress:'',fax:''};}
